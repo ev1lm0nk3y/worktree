@@ -237,6 +237,16 @@ export class TmuxOperations {
     this.execSilent(`tmux select-layout -t "${this.sessionName}:${windowName}" ${layout}`);
   }
 
+  countPanes(windowName: string): number {
+    if (!this.hasWindow(windowName)) return 0;
+    try {
+      const output = this.exec(`tmux list-panes -t "${this.sessionName}:${windowName}" -F "#{pane_id}"`);
+      return output.split('\n').filter(Boolean).length;
+    } catch {
+      return 0;
+    }
+  }
+
   openITerm(windowIndex: number, mode: 'window' | 'tab' | 'current' = 'window', focus: boolean = true): void {
     const isNewSession = !existsSync(this.markerFile);
     const activate = focus ? 'activate' : '';

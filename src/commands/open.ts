@@ -29,17 +29,18 @@ async function selectArchetype(workerNumber: number): Promise<Archetype> {
     console.log(`${index + 1}) ${arch.emoji}  ${arch.name} - ${arch.shortDescription}`);
   });
 
+  const max = ARCHETYPES.length;
   return new Promise((resolve) => {
     const askQuestion = () => {
-      rl.question(chalk.yellow('Choice (1-5): '), (answer) => {
+      rl.question(chalk.yellow(`Choice (1-${max}): `), (answer) => {
         const choice = parseInt(answer);
-        if (choice >= 1 && choice <= 5) {
+        if (choice >= 1 && choice <= max) {
           const archetype = ARCHETYPES[choice - 1];
           console.log(chalk.green(`✓ Worker ${workerNumber} assigned as ${archetype.name}`));
           rl.close();
           resolve(archetype);
         } else {
-          console.log(chalk.red('Invalid choice. Please select 1-5.'));
+          console.log(chalk.red(`Invalid choice. Please select 1-${max}.`));
           askQuestion();
         }
       });

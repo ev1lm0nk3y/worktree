@@ -28,6 +28,8 @@ program
   .description('Split current tmux pane with new Claude instance')
   .option('-v, --vertical', 'Split vertically instead of horizontally')
   .option('-f, --focus', 'Focus the new pane after creation')
+  .option('-a, --archetype <id>', 'Assign archetype role: architect|detective|craftsman|explorer|aesthete|adversary')
+  .option('--no-wizard', 'Skip the archetype selection wizard')
   .action(splitCommand);
 
 program
