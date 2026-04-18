@@ -3,7 +3,7 @@ import ora from 'ora';
 import { writeFileSync } from 'fs';
 import path from 'path';
 import { GitOperations } from '../lib/git';
-import { GitHubOperations } from '../lib/github';
+import { getTicketOperations } from '../lib/ticketing';
 import { TmuxOperations } from '../lib/tmux';
 import { ConfigManager } from '../lib/config';
 import { generateClaudeMd, ensureGitignore } from '../templates/claude.md';
@@ -50,19 +50,31 @@ async function selectArchetype(workerNumber: number): Promise<Archetype> {
 
 export async function openCommand(issueNumber: string, description?: string, options?: OpenOptions): Promise<void> {
   const spinner = ora();
-  const workerCount = parseInt(options?.workers || '1', 10);
-  
+
+  // Initialize operations
+  const git = new GitOperations();
+  const config = new ConfigManager(git.repoRoot);
+  const provider = config.getTicketingProvider();
+  const tickets = await getTicketOperations(provider);
+  const tmux = new TmuxOperations(config.getSessionName());
+  const providerLabel = provider === 'linear' ? 'Linear' : 'GitHub';
+
+  const workerCount = options?.workers !== undefined
+    ? parseInt(options.workers, 10)
+    : config.getDefaultWorkers();
+
   if (workerCount < 1 || workerCount > 5) {
     console.error(chalk.red('Error: Workers must be between 1 and 5'));
     process.exit(1);
   }
-  
+
   try {
-    // Initialize operations
-    const git = new GitOperations();
-    const github = new GitHubOperations();
-    const config = new ConfigManager(git.repoRoot);
-    const tmux = new TmuxOperations(config.getSessionName());
+
+    if (!config.hasTicketingProvider()) {
+      console.log(chalk.yellow(`⚠️  No "ticketing" field in .worktree.yml — defaulting to ${providerLabel}. Run \`wt init\` to change.`));
+    } else {
+      console.log(chalk.gray(`Ticketing provider: ${providerLabel}`));
+    }
     
     // Check if worktree already exists
     const worktreePath = git.getWorktreePath(issueNumber, description);
@@ -79,7 +91,7 @@ export async function openCommand(issueNumber: string, description?: string, opt
         const windows = tmux.listWindows();
         const window = windows.find(w => w.name === windowName);
         if (window) {
-          tmux.openITerm(window.index);
+          tmux.openITerm(window.index, config.getItermOpenMode(), config.getItermFocus());
           tmux.switchToWindow(windowName);
         }
         
@@ -96,15 +108,19 @@ export async function openCommand(issueNumber: string, description?: string, opt
       spinner.succeed(`Created worktree at: ${worktreePath}`);
     }
     
-    // Fetch GitHub issue details
-    spinner.start('Fetching issue details from GitHub...');
-    const issue = await github.fetchIssue(issueNumber);
+    // Fetch issue details from the configured provider
+    spinner.start(`Fetching issue details from ${providerLabel}...`);
+    const issue = await tickets.fetchIssue(issueNumber);
     if (issue) {
-      spinner.succeed('Fetched issue details from GitHub');
+      spinner.succeed(`Fetched issue details from ${providerLabel}`);
     } else {
-      spinner.fail(`GitHub issue #${issueNumber} not found`);
-      console.error(chalk.red('\n❌ Error: Issue must exist on GitHub before creating a worktree'));
-      console.log(chalk.gray('Create the issue first with: gh issue create'));
+      spinner.fail(`${providerLabel} issue ${issueNumber} not found`);
+      console.error(chalk.red(`\n❌ Error: Issue must exist on ${providerLabel} before creating a worktree`));
+      if (provider === 'github') {
+        console.log(chalk.gray('Create the issue first with: gh issue create'));
+      } else {
+        console.log(chalk.gray('Ensure LINEAR_API_KEY is set and the identifier (e.g. LIN-123) is correct'));
+      }
       process.exit(1);
     }
     
@@ -113,6 +129,7 @@ export async function openCommand(issueNumber: string, description?: string, opt
       issueNumber,
       branchName: git.createBranchName(issueNumber, description),
       issue: issue || undefined,
+      provider,
       projectName: config.getProjectName(),
       customContext: config.getClaudeContext(),
       commands: config.getCommands()
@@ -247,11 +264,19 @@ export async function openCommand(issueNumber: string, description?: string, opt
       );
     }
     
+    // Apply tmux layout if configured (and we have multiple panes)
+    const layout = config.getLayout();
+    const totalPanes = workerCount + (options?.watcher ? 1 : 0);
+    if (layout && totalPanes > 1) {
+      tmux.selectLayout(windowName, layout);
+      console.log(chalk.gray(`Applied tmux layout: ${layout}`));
+    }
+
     // Open iTerm
     const windows = tmux.listWindows();
     const window = windows.find(w => w.name === windowName);
     if (window) {
-      tmux.openITerm(window.index);
+      tmux.openITerm(window.index, config.getItermOpenMode(), config.getItermFocus());
     }
     
     console.log(chalk.green('\n✓ Claude Code launched successfully'));

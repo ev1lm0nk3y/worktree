@@ -2,10 +2,23 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { load, dump } from 'js-yaml';
 import path from 'path';
 import chalk from 'chalk';
+import { TicketProvider } from './ticketing';
+
+export type ItermOpenMode = 'window' | 'tab' | 'current';
+export type TmuxLayout = 'tiled' | 'even-horizontal' | 'even-vertical' | 'main-vertical' | 'main-horizontal';
+
+export interface ItermConfig {
+  open?: ItermOpenMode;
+  focus?: boolean;
+}
 
 export interface WorktreeConfig {
   name?: string;
   session?: string;
+  ticketing?: TicketProvider;
+  iterm?: ItermConfig;
+  layout?: TmuxLayout;
+  workers?: number;
   claude_context?: string;
   commands?: {
     dev?: string;
@@ -58,6 +71,46 @@ export class ConfigManager {
 
   getClaudeContext(): string | undefined {
     return this.config.claude_context;
+  }
+
+  getTicketingProvider(): TicketProvider {
+    return this.config.ticketing === 'linear' ? 'linear' : 'github';
+  }
+
+  hasTicketingProvider(): boolean {
+    return this.config.ticketing === 'github' || this.config.ticketing === 'linear';
+  }
+
+  getItermOpenMode(): ItermOpenMode {
+    const mode = this.config.iterm?.open;
+    return mode === 'tab' || mode === 'current' ? mode : 'window';
+  }
+
+  getItermFocus(): boolean {
+    return this.config.iterm?.focus !== false;
+  }
+
+  getLayout(): TmuxLayout | undefined {
+    const l = this.config.layout;
+    const valid: TmuxLayout[] = ['tiled', 'even-horizontal', 'even-vertical', 'main-vertical', 'main-horizontal'];
+    return l && valid.includes(l) ? l : undefined;
+  }
+
+  getDefaultWorkers(): number {
+    const n = this.config.workers;
+    if (typeof n === 'number' && n >= 1 && n <= 5) return n;
+    return 1;
+  }
+
+  setTicketingProvider(provider: TicketProvider): void {
+    this.config.ticketing = provider;
+    const yamlContent = dump(this.config, {
+      indent: 2,
+      lineWidth: -1,
+      quotingType: '"',
+      forceQuotes: false
+    });
+    writeFileSync(this.configPath, yamlContent);
   }
 
   getCommands(): WorktreeConfig['commands'] {
@@ -119,13 +172,17 @@ export class ConfigManager {
     return commands;
   }
 
-  createDefaultConfig(): void {
+  createDefaultConfig(provider: TicketProvider = 'github'): void {
     const projectName = path.basename(path.dirname(this.configPath));
     const detectedCommands = this.detectCommands();
-    
+
     const defaultConfig: WorktreeConfig = {
       name: projectName,
       session: projectName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_workers',
+      ticketing: provider,
+      iterm: { open: 'window', focus: true },
+      layout: 'tiled',
+      workers: 1,
       claude_context: `# ${projectName}
 
 Add project-specific context here that Claude should know about.
@@ -146,6 +203,7 @@ For example:
     });
 
     writeFileSync(this.configPath, yamlContent);
+    this.config = defaultConfig;
     console.log(chalk.green(`✓ Created .worktree.yml in ${this.configPath}`));
     console.log(chalk.gray('  Customize this file to add project-specific context and commands'));
   }

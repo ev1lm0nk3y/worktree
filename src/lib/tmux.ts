@@ -232,35 +232,53 @@ export class TmuxOperations {
     }, 5000);
   }
 
-  openITerm(windowIndex: number): void {
+  selectLayout(windowName: string, layout: string): void {
+    if (!this.hasWindow(windowName)) return;
+    this.execSilent(`tmux select-layout -t "${this.sessionName}:${windowName}" ${layout}`);
+  }
+
+  openITerm(windowIndex: number, mode: 'window' | 'tab' | 'current' = 'window', focus: boolean = true): void {
     const isNewSession = !existsSync(this.markerFile);
-    
+    const activate = focus ? 'activate' : '';
+    const attachCmd = `tmux attach -t ${this.sessionName}`;
+
     if (isNewSession) {
       writeFileSync(this.markerFile, '');
-      
-      // Open new iTerm window and attach to tmux
+
+      let openStep: string;
+      if (mode === 'tab') {
+        openStep = `
+          if (count of windows) = 0 then
+            create window with default profile
+          else
+            tell current window to create tab with default profile
+          end if`;
+      } else if (mode === 'current') {
+        openStep = `
+          if (count of windows) = 0 then
+            create window with default profile
+          end if`;
+      } else {
+        openStep = `create window with default profile`;
+      }
+
       const script = `
         tell application "iTerm"
-          activate
-          create window with default profile
+          ${activate}
+          ${openStep}
           tell current session of current window
-            write text "tmux attach -t ${this.sessionName}"
+            write text "${attachCmd}"
             delay 0.5
             write text "${windowIndex}"
           end tell
         end tell
       `;
-      
+
       execSync(`osascript -e '${script}'`);
     } else {
-      // Just activate iTerm and switch window
-      const script = `
-        tell application "iTerm"
-          activate
-        end tell
-      `;
-      
-      execSync(`osascript -e '${script}'`);
+      if (focus) {
+        execSync(`osascript -e 'tell application "iTerm" to activate'`);
+      }
       this.sendKeys(this.sessionName, `C-b ${windowIndex}`);
     }
   }

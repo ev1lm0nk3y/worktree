@@ -1,9 +1,10 @@
-import { GitHubIssue } from '../lib/github';
+import { TicketIssue, TicketProvider } from '../lib/ticketing';
 
 export interface ClaudeContext {
   issueNumber: string;
   branchName: string;
-  issue?: GitHubIssue;
+  issue?: TicketIssue;
+  provider: TicketProvider;
   projectName: string;
   customContext?: string;
   commands?: {
@@ -16,20 +17,21 @@ export interface ClaudeContext {
 }
 
 export function generateClaudeMd(context: ClaudeContext): string {
-  const { issueNumber, branchName, issue, projectName, customContext, commands } = context;
-  
-  let content = `# ${projectName} - Issue #${issueNumber}
+  const { issueNumber, branchName, issue, provider, projectName, customContext, commands } = context;
+  const providerLabel = provider === 'linear' ? 'Linear' : 'GitHub';
+  const ticketRef = provider === 'linear' ? issueNumber : `#${issueNumber}`;
+
+  let content = `# ${projectName} - Issue ${ticketRef}
 
 ## Context
-This is a worktree for working on GitHub issue #${issueNumber}.
+This is a worktree for working on ${providerLabel} issue ${ticketRef}.
 Branch: ${branchName}
 Created: ${new Date().toISOString()}
 
 `;
 
-  // Add GitHub issue details if available
   if (issue) {
-    content += `## GitHub Issue Details
+    content += `## ${providerLabel} Issue Details
 **Title:** ${issue.title}
 **State:** ${issue.state}
 **URL:** ${issue.url}
@@ -50,17 +52,28 @@ Created: ${new Date().toISOString()}
     content += '\n';
   }
 
-  // Add instructions
   content += `## Instructions
-1. Focus only on implementing the requirements for issue #${issueNumber}
+1. Focus only on implementing the requirements for issue ${ticketRef}
 2. Test all changes before committing
 3. Keep commits focused and well-documented
-4. Update the GitHub issue with progress as needed
+4. Update the ${providerLabel} issue with progress as needed
 
-## Key Commands
+`;
+
+  if (provider === 'github') {
+    content += `## Key Commands
 - View issue: \`gh issue view ${issueNumber}\`
 - Update issue: \`gh issue comment ${issueNumber} -b "Progress update..."\`
 - Create PR: \`gh pr create --title "Fix #${issueNumber}: [description]" --body "Closes #${issueNumber}"\`
+`;
+  } else {
+    content += `## Key References
+- Linear issue: ${issue?.url || ticketRef}
+- Reference ${ticketRef} in commit messages and PR descriptions so Linear auto-links them.
+`;
+  }
+
+  content += `
 
 ## Before Starting Work
 Always ensure you have the latest main code:
