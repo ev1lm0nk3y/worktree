@@ -1,17 +1,13 @@
 import { execSync } from 'child_process';
 import chalk from 'chalk';
+import { TicketIssue, TicketOperations, TicketProvider } from './ticketing';
 
-export interface GitHubIssue {
+export interface GitHubIssue extends TicketIssue {
   number: number;
-  title: string;
-  body: string;
-  labels: string[];
-  state: string;
-  assignee?: string;
-  url: string;
 }
 
-export class GitHubOperations {
+export class GitHubOperations implements TicketOperations {
+  public readonly provider: TicketProvider = 'github';
   private hasGhCli(): boolean {
     try {
       execSync('which gh', { stdio: 'ignore' });
@@ -43,6 +39,7 @@ export class GitHubOperations {
       const data = JSON.parse(jsonOutput);
       
       return {
+        identifier: String(data.number),
         number: data.number,
         title: data.title,
         body: data.body || '',
@@ -107,6 +104,7 @@ export class GitHubOperations {
       const issues = JSON.parse(jsonOutput);
       
       return issues.map((issue: any) => ({
+        identifier: String(issue.number),
         number: issue.number,
         title: issue.title,
         body: '',

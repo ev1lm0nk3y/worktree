@@ -1,13 +1,13 @@
 # Worktree CLI
 
-A powerful CLI tool for managing Git worktrees with GitHub issues and Claude Code integration. Create isolated workspaces for each issue with automatic context loading, tmux session management, and support for multiple Claude workers collaborating on the same issue.
+A powerful CLI tool for managing Git worktrees with GitHub or Linear issues and Claude Code integration. Create isolated workspaces for each issue with automatic context loading, tmux session management, and support for multiple Claude workers collaborating on the same issue.
 
 ## Features
 
 - 🌳 **Git Worktree Management** - Create isolated branches and directories per issue
-- 🐙 **GitHub Integration** - Fetch issue details automatically
+- 🎟️ **Multi-provider Ticketing** - Pick GitHub Issues or Linear per-repo
 - 🤖 **Claude Code Integration** - Auto-launch Claude with issue context
-- 🖥️ **tmux Session Management** - Organized windows and panes per issue
+- 🖥️ **tmux Session Management** - Organized windows, panes, and layouts per issue
 - 📝 **Contextual Documentation** - Auto-generated CLAUDE.md with project info
 - ⚡ **Smart Commands** - Quick access to development commands
 - 👁️ **Progress Monitoring** - Optional overseer worker that tracks progress
@@ -18,8 +18,10 @@ A powerful CLI tool for managing Git worktrees with GitHub issues and Claude Cod
 - Git
 - tmux
 - iTerm2 (macOS)
-- GitHub CLI (`gh`) - Install with `brew install gh`
 - Claude Code CLI (`claude`)
+- One of:
+  - GitHub CLI (`gh`) — `brew install gh`, for GitHub Issues
+  - `LINEAR_API_KEY` env var — from https://linear.app/settings/api, for Linear
 
 ## Installation
 
@@ -47,13 +49,16 @@ In your Git repository:
 worktree init
 ```
 
-This creates `.worktree.yml` with auto-detected project settings.
+This creates `.worktree.yml` with auto-detected project settings. You'll be prompted to pick a ticketing provider (GitHub or Linear); re-running `worktree init` updates the provider on an existing config.
 
 ### Create/Open Worktree
 
 ```bash
-# Create worktree for issue #123
+# GitHub: open issue #123
 worktree open 123
+
+# Linear: open by identifier
+worktree open LIN-123
 
 # With description for better branch naming
 worktree open 123 "add-authentication"
@@ -77,14 +82,20 @@ worktree open 123 -w 3 --watcher
 When you need additional Claude instances for the same issue:
 
 ```bash
-# Split horizontally (default)
+# Split horizontally (default) — prompts for archetype
 worktree split 123
 
 # Split vertically
 worktree split 123 -v
+
+# Assign an archetype directly (skips the wizard)
+worktree split 123 -a detective
+
+# Skip the wizard and take the default archetype for this worker slot
+worktree split 123 --no-wizard
 ```
 
-**Note:** Consider using `worktree open -w <number>` for coordinated multi-worker setups.
+Valid archetype ids: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`. The new pane is wired into `WORKTREE_COORDINATION.md` just like `open -w`.
 
 ### List Worktrees
 
@@ -115,27 +126,43 @@ Edit `.worktree.yml` in your repository:
 ```yaml
 name: "My Project"
 session: "myproject_workers"
+
+# Ticketing provider: "github" (default) or "linear"
+ticketing: github
+
+# Default number of workers when -w is omitted (1-5)
+workers: 1
+
+# tmux layout applied when there are multiple panes
+# One of: tiled | even-horizontal | even-vertical | main-vertical | main-horizontal
+layout: tiled
+
+# iTerm attach behavior (macOS)
+iterm:
+  open: window   # window | tab | current
+  focus: true
+
 claude_context: |
   This is a Next.js app with TypeScript.
   Key areas:
   - src/app - App router pages
   - src/lib - Utilities and actions
-  
+
 commands:
   dev: npm run dev
   test: npm test
   lint: npm run lint
   typecheck: npm run typecheck
-  
+
 setup_commands:
   - npm install
 ```
 
 ## How It Works
 
-1. **Validates GitHub issue** - Ensures issue exists before creating worktree
+1. **Validates ticket** - Ensures the issue exists in GitHub or Linear before creating worktree
 2. **Creates Git worktree** - Isolated directory with new branch
-3. **Fetches GitHub issue** - Gets title, body, labels via `gh` CLI
+3. **Fetches issue details** - Title, body, labels via `gh` CLI or the Linear API
 4. **Generates context files**:
    - **CLAUDE.md** - Issue details and project context for all workers
    - **WORKTREE_COORDINATION.md** - Task coordination for multi-worker setups
@@ -195,6 +222,7 @@ When using multiple workers, you can assign specialized roles:
 - 🛠️ **The Craftsman** - Code quality & best practices
 - 🚀 **The Explorer** - Innovation & alternative approaches
 - 🎨 **The Aesthete** - Elegant solutions & simplicity
+- ⚔️ **The Adversary** - Adversarial review & red-teaming (drives the `init-adversarial-review` flow)
 
 ### Interactive Wizard Example
 
@@ -210,7 +238,8 @@ Select archetype for Worker 2:
 3) 🛠️  The Craftsman - Code quality & best practices
 4) 🚀  The Explorer - Innovation & alternatives
 5) 🎨  The Aesthete - Elegant solutions & simplicity
-Choice (1-5): 2
+6) ⚔️  The Adversary - Adversarial review & red-teaming
+Choice (1-6): 2
 
 ✓ Worker 2 assigned as The Detective
 
