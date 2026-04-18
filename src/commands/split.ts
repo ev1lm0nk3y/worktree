@@ -1,10 +1,10 @@
 import chalk from 'chalk';
 import * as readline from 'readline';
-import { GitOperations } from '../lib/git';
-import { TmuxOperations } from '../lib/tmux';
-import { ConfigManager } from '../lib/config';
-import { ARCHETYPES, Archetype, getArchetypeById, getDefaultArchetypeForWorker } from '../lib/archetypes';
-import { generateWorkerPrompt } from '../templates/coordination.md';
+import { GitOperations } from '../lib/git.js';
+import { TmuxOperations } from '../lib/tmux.js';
+import { ConfigManager } from '../lib/config.js';
+import { ARCHETYPES, Archetype, getArchetypeById, getDefaultArchetypeForWorker } from '../lib/archetypes.js';
+import { generateWorkerPrompt } from '../templates/coordination.md.js';
 
 interface SplitOptions {
   vertical?: boolean;

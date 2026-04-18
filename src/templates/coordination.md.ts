@@ -1,4 +1,4 @@
-import { Archetype } from '../lib/archetypes';
+import { Archetype } from '../lib/archetypes.js';
 
 export interface CoordinationContext {
   issueNumber: string;

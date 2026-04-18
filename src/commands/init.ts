@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import * as readline from 'readline';
-import { GitOperations } from '../lib/git';
-import { ConfigManager } from '../lib/config';
-import { TicketProvider } from '../lib/ticketing';
+import { GitOperations } from '../lib/git.js';
+import { ConfigManager } from '../lib/config.js';
+import { TicketProvider } from '../lib/ticketing.js';
 
 async function promptTicketingProvider(): Promise<TicketProvider> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

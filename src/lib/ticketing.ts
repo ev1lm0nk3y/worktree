@@ -17,9 +17,9 @@ export interface TicketOperations {
 
 export async function getTicketOperations(provider: TicketProvider): Promise<TicketOperations> {
   if (provider === 'linear') {
-    const { LinearOperations } = await import('./linear');
+    const { LinearOperations } = await import('./linear.js');
     return new LinearOperations();
   }
-  const { GitHubOperations } = await import('./github');
+  const { GitHubOperations } = await import('./github.js');
   return new GitHubOperations();
 }

@@ -2,14 +2,15 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { writeFileSync } from 'fs';
 import path from 'path';
-import { GitOperations } from '../lib/git';
-import { getTicketOperations } from '../lib/ticketing';
-import { TmuxOperations } from '../lib/tmux';
-import { ConfigManager } from '../lib/config';
-import { generateClaudeMd, ensureGitignore } from '../templates/claude.md';
-import { generateCoordinationMd, generateWorkerPrompt } from '../templates/coordination.md';
-import { generateOverseerMd, generateOverseerPrompt } from '../templates/overseer.md';
-import { ARCHETYPES, Archetype, getDefaultArchetypeForWorker } from '../lib/archetypes';
+import { execSync } from 'child_process';
+import { GitOperations } from '../lib/git.js';
+import { getTicketOperations } from '../lib/ticketing.js';
+import { TmuxOperations } from '../lib/tmux.js';
+import { ConfigManager } from '../lib/config.js';
+import { generateClaudeMd, ensureGitignore } from '../templates/claude.md.js';
+import { generateCoordinationMd, generateWorkerPrompt } from '../templates/coordination.md.js';
+import { generateOverseerMd, generateOverseerPrompt } from '../templates/overseer.md.js';
+import { ARCHETYPES, Archetype, getDefaultArchetypeForWorker } from '../lib/archetypes.js';
 import * as readline from 'readline';
 
 interface OpenOptions {
@@ -167,7 +168,6 @@ export async function openCommand(issueNumber: string, description?: string, opt
       for (const command of setupCommands) {
         spinner.start(`Running: ${command}`);
         try {
-          const { execSync } = require('child_process');
           execSync(command, { cwd: worktreePath, stdio: 'ignore' });
           spinner.succeed(`Completed: ${command}`);
         } catch (error) {

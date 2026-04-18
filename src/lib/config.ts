@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { load, dump } from 'js-yaml';
 import path from 'path';
 import chalk from 'chalk';
-import { TicketProvider } from './ticketing';
+import { TicketProvider } from './ticketing.js';
 
 export type ItermOpenMode = 'window' | 'tab' | 'current';
 export type TmuxLayout = 'tiled' | 'even-horizontal' | 'even-vertical' | 'main-vertical' | 'main-horizontal';

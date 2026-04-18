@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 import chalk from 'chalk';
-import { TicketIssue, TicketOperations, TicketProvider } from './ticketing';
+import { TicketIssue, TicketOperations, TicketProvider } from './ticketing.js';
 
 export interface GitHubIssue extends TicketIssue {
   number: number;

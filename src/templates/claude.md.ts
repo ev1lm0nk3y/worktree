@@ -1,4 +1,5 @@
-import { TicketIssue, TicketProvider } from '../lib/ticketing';
+import * as fs from 'fs';
+import { TicketIssue, TicketProvider } from '../lib/ticketing.js';
 
 export interface ClaudeContext {
   issueNumber: string;
@@ -122,8 +123,7 @@ git rebase origin/main
 
 export function ensureGitignore(worktreePath: string): void {
   const gitignorePath = `${worktreePath}/.gitignore`;
-  const fs = require('fs');
-  
+
   let gitignoreContent = '';
   
   if (fs.existsSync(gitignorePath)) {

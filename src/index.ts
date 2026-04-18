@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { openCommand } from './commands/open';
-import { splitCommand } from './commands/split';
-import { listCommand } from './commands/list';
-import { removeCommand } from './commands/remove';
-import { initCommand } from './commands/init';
-import { tldrCommand } from './commands/tldr';
+import { openCommand } from './commands/open.js';
+import { splitCommand } from './commands/split.js';
+import { listCommand } from './commands/list.js';
+import { removeCommand } from './commands/remove.js';
+import { initCommand } from './commands/init.js';
+import { tldrCommand } from './commands/tldr.js';
 
 const program = new Command();
 

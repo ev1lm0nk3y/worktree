@@ -1,7 +1,7 @@
 import chalk from 'chalk';
-import { GitOperations } from '../lib/git';
-import { TmuxOperations } from '../lib/tmux';
-import { ConfigManager } from '../lib/config';
+import { GitOperations } from '../lib/git.js';
+import { TmuxOperations } from '../lib/tmux.js';
+import { ConfigManager } from '../lib/config.js';
 import { existsSync, statSync } from 'fs';
 import path from 'path';
 

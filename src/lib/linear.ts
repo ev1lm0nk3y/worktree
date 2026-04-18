@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { LinearClient } from '@linear/sdk';
-import { TicketIssue, TicketOperations, TicketProvider } from './ticketing';
+import { TicketIssue, TicketOperations, TicketProvider } from './ticketing.js';
 
 export class LinearOperations implements TicketOperations {
   public readonly provider: TicketProvider = 'linear';

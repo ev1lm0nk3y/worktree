@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import ora from 'ora';
-import { GitOperations } from '../lib/git';
-import { TmuxOperations } from '../lib/tmux';
-import { ConfigManager } from '../lib/config';
+import { GitOperations } from '../lib/git.js';
+import { TmuxOperations } from '../lib/tmux.js';
+import { ConfigManager } from '../lib/config.js';
 
 export async function removeCommand(issueNumber: string): Promise<void> {
   const spinner = ora();
