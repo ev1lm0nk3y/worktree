@@ -19,6 +19,7 @@ program
   .command('open <issue-number> [description]')
   .description('Create or switch to a worktree for a GitHub issue')
   .option('-w, --workers <number>', 'Number of Claude workers to spawn (default: 1)', '1')
+  .option('--deploy-pool <name>', 'Deploy a pre-configured worker pool (interactive selection if no name given)')
   .option('--watcher', 'Spawn an additional overseer worker to monitor progress')
   .option('--no-wizard', 'Skip archetype selection wizard and use defaults')
   .action(openCommand);

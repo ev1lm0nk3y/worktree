@@ -15,6 +15,7 @@ export interface ItermConfig {
 export interface WorktreeConfig {
   name?: string;
   session?: string;
+  linear_workspace?: string;
   ticketing?: TicketProvider;
   iterm?: ItermConfig;
   layout?: TmuxLayout;
