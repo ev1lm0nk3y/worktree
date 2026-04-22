@@ -27,14 +27,14 @@ A powerful CLI tool for managing Git worktrees with GitHub or Linear issues and 
 ## Installation
 
 ```bash
-npm install -g @agenttools/worktree
+npm install -g @ev1lm0nk3y/worktree
 ```
 
 Or clone and link locally:
 
 ```bash
-git clone https://github.com/agenttools/worktree
-cd worktree-cli
+git clone https://github.com/ev1lm0nk3y/worktree
+cd worktree
 npm install
 npm run build
 npm link
