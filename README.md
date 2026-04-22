@@ -12,6 +12,7 @@ A powerful CLI tool for managing Git worktrees with GitHub or Linear issues and 
 - ⚡ **Smart Commands** - Quick access to development commands
 - 👁️ **Progress Monitoring** - Optional overseer worker that tracks progress
 - 🎭 **Coding Agent Archetypes** - Assign specialized roles to multiple workers
+- 🧩 **Worker Pools** - Deploy pre-configured archetype teams (Researchers, Coders, Reviewers) in one command
 
 ## Prerequisites
 
@@ -68,6 +69,12 @@ worktree open 123 "add-authentication"
 worktree open 123 -w 3
 # Spawns 3 Claude instances with coordination
 
+# Deploy a pre-configured worker pool (interactive picker)
+worktree open 123 --deploy-pool
+
+# Deploy a specific pool by name
+worktree open 123 --deploy-pool Researchers
+
 # With an overseer worker
 worktree open 123 --watcher
 # Adds an overseer that monitors progress every 60 seconds
@@ -76,6 +83,8 @@ worktree open 123 --watcher
 worktree open 123 -w 3 --watcher
 # 3 workers + 1 overseer monitoring them
 ```
+
+> `--deploy-pool` and `-w/--workers` are mutually exclusive — a pool defines its own worker count and archetype assignments.
 
 ### Split Pane
 
@@ -223,6 +232,86 @@ When using multiple workers, you can assign specialized roles:
 - 🚀 **The Explorer** - Innovation & alternative approaches
 - 🎨 **The Aesthete** - Elegant solutions & simplicity
 - ⚔️ **The Adversary** - Adversarial review & red-teaming (drives the `init-adversarial-review` flow)
+
+## Worker Pools
+
+Worker pools are named, pre-configured teams of archetypes you can deploy with a single flag. Instead of picking `-w 3` and walking through the archetype wizard, `--deploy-pool` spins up the exact roster the pool defines. Worker 1 is always the Coordinator; the pool's `workers` list drives workers 2..N.
+
+### Built-in Pools
+
+| Pool | Workers | Purpose |
+|---|---|---|
+| **Researchers** | architect, detective, explorer | Evaluate solutions, choose best approach, structure deployment |
+| **Coders** | craftsman, aesthete, detective | Implement from research output (add adversary later with `split`) |
+| **Reviewers** | aesthete, detective, adversary | Final code quality and security review |
+
+### Usage
+
+```bash
+# Pick interactively from all available pools
+worktree open 123 --deploy-pool
+
+# Deploy a specific pool
+worktree open 123 --deploy-pool Coders
+
+# Pool count drives worker count — do not combine with -w
+worktree open 123 --deploy-pool Reviewers --watcher
+```
+
+### Custom Pools
+
+Define your own pools in either location (user-level overrides project-level):
+
+- Project: `<repo>/.claude/archetype-groups.yml`
+- User: `~/.claude/archetype-groups.yml`
+
+```yaml
+pools:
+  Hardening:
+    description: Security-focused review and remediation
+    coordinator:
+      enable: true
+    workers:
+      - adversary
+      - detective
+      - craftsman
+    watcher:
+      enable: false   # set true to auto-spawn an overseer with this pool
+```
+
+Valid archetype ids: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`. Custom pools appear alongside the built-ins in the interactive picker and in `--deploy-pool <name>`.
+
+## Linear Integration
+
+This CLI supports Linear as a first-class ticketing provider alongside GitHub. Select it per-repo at `worktree init`, or by setting `ticketing: linear` in `.worktree.yml`.
+
+### Setup
+
+1. Generate a personal API key at https://linear.app/settings/api.
+2. Export it in your shell environment:
+
+   ```bash
+   export LINEAR_API_KEY=lin_api_xxxxxxxxxxxx
+   ```
+
+3. In the repo, run `worktree init` and choose **Linear** when prompted (or edit `.worktree.yml` directly).
+
+### Opening a Linear Issue
+
+Use the full Linear identifier (team prefix + number):
+
+```bash
+worktree open LIN-123
+worktree open LIN-123 "add-auth-middleware"
+worktree open ENG-842 -w 3
+worktree open ENG-842 --deploy-pool Researchers
+```
+
+The issue is validated against the Linear API before the worktree is created — a missing or unauthorized identifier is a hard error. Title, description, and labels are fetched and written into `CLAUDE.md` for every worker.
+
+### Re-running `init`
+
+Re-running `worktree init` on an existing config updates the ticketing provider without touching your other settings, so you can switch between GitHub and Linear per-repo at any time.
 
 ### Interactive Wizard Example
 
