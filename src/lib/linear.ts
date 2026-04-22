@@ -1,6 +1,21 @@
 import chalk from 'chalk';
+import { existsSync, readFileSync } from 'fs';
+import path from 'path';
+import os from 'os';
 import { LinearClient } from '@linear/sdk';
 import { TicketIssue, TicketOperations, TicketProvider } from './ticketing.js';
+
+function loadLinearApiKeyFromFile(): string | null {
+  const envFile = path.join(os.homedir(), '.local', 'state', 'linear', 'env');
+  if (!existsSync(envFile)) return null;
+  try {
+    const content = readFileSync(envFile, 'utf8');
+    const match = content.match(/^\s*(?:export\s+)?LINEAR_API_KEY\s*=\s*["']?([^"'\n]+?)["']?\s*$/m);
+    return match ? match[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
 
 export class LinearOperations implements TicketOperations {
   public readonly provider: TicketProvider = 'linear';
@@ -8,9 +23,9 @@ export class LinearOperations implements TicketOperations {
 
   private getClient(): LinearClient | null {
     if (this.client) return this.client;
-    const apiKey = process.env.LINEAR_API_KEY;
+    const apiKey = process.env.LINEAR_API_KEY || loadLinearApiKeyFromFile();
     if (!apiKey) {
-      console.log(chalk.yellow('⚠️  LINEAR_API_KEY not set. Export it in your shell to fetch Linear issues.'));
+      console.log(chalk.yellow('⚠️  LINEAR_API_KEY not set and no cached key at ~/.local/state/linear/env. Run `wt init` to set one.'));
       return null;
     }
     this.client = new LinearClient({ apiKey });

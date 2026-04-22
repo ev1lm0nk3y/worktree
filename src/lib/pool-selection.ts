@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as readline from 'readline';
 import chalk from 'chalk';
-import { ArchetypePool } from './pools';
+import { ArchetypePool } from './pools.js';
 
 export async function selectPoolInteractive(pools: ArchetypePool[]): Promise<ArchetypePool> {
   // Try fzf first
@@ -20,11 +20,6 @@ function tryFzfSelection(pools: ArchetypePool[]): ArchetypePool | null {
   try {
     // Check if fzf is available
     execSync('which fzf', { stdio: 'ignore' });
-
-    // Build fzf input
-    const options = pools
-      .map((p, i) => `${i + 1}. ${chalk.cyan(p.name.padEnd(20))} - ${p.description}`)
-      .join('\n');
 
     // Run fzf
     const input = pools

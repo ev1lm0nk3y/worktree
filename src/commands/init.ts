@@ -1,5 +1,8 @@
 import chalk from 'chalk';
 import * as readline from 'readline';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, chmodSync } from 'fs';
+import path from 'path';
+import os from 'os';
 import { GitOperations } from '../lib/git.js';
 import { ConfigManager } from '../lib/config.js';
 import { TicketProvider } from '../lib/ticketing.js';
@@ -31,6 +34,95 @@ async function promptTicketingProvider(): Promise<TicketProvider> {
   });
 }
 
+async function promptLinearApiKey(): Promise<string | null> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+
+  // Mask input as it's typed
+  const rlAny = rl as any;
+  rlAny._writeToOutput = (s: string) => {
+    if (s.includes('\n') || s.includes('\r')) {
+      process.stdout.write(s);
+    } else {
+      process.stdout.write('*');
+    }
+  };
+
+  return new Promise((resolve) => {
+    rl.question(chalk.yellow('Paste Linear API key (lin_api_...) [enter to skip]: '), (answer) => {
+      rl.close();
+      process.stdout.write('\n');
+      const trimmed = answer.trim();
+      resolve(trimmed ? trimmed : null);
+    });
+  });
+}
+
+function persistLinearApiKey(apiKey: string): string {
+  const envDir = path.join(os.homedir(), '.local', 'state', 'linear');
+  const envFile = path.join(envDir, 'env');
+  const exportLine = `export LINEAR_API_KEY=${apiKey}`;
+
+  mkdirSync(envDir, { recursive: true });
+
+  if (existsSync(envFile)) {
+    const content = readFileSync(envFile, 'utf8');
+    if (content.includes('LINEAR_API_KEY=')) {
+      const updated = content.replace(/^export LINEAR_API_KEY=.*$/m, exportLine);
+      writeFileSync(envFile, updated);
+    } else {
+      appendFileSync(envFile, (content.endsWith('\n') ? '' : '\n') + exportLine + '\n');
+    }
+  } else {
+    writeFileSync(envFile, exportLine + '\n');
+  }
+
+  try { chmodSync(envFile, 0o600); } catch { /* best effort */ }
+  return envFile;
+}
+
+function loadLinearApiKeyFromFile(): string | null {
+  const envFile = path.join(os.homedir(), '.local', 'state', 'linear', 'env');
+  if (!existsSync(envFile)) return null;
+  try {
+    const content = readFileSync(envFile, 'utf8');
+    const match = content.match(/^\s*(?:export\s+)?LINEAR_API_KEY\s*=\s*["']?([^"'\n]+?)["']?\s*$/m);
+    return match ? match[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function ensureLinearApiKey(): Promise<void> {
+  if (process.env.LINEAR_API_KEY) {
+    console.log(chalk.green('✓ LINEAR_API_KEY is set in your environment'));
+    return;
+  }
+
+  const cachedKey = loadLinearApiKeyFromFile();
+  if (cachedKey) {
+    const envFile = path.join(os.homedir(), '.local', 'state', 'linear', 'env');
+    process.env.LINEAR_API_KEY = cachedKey;
+    console.log(chalk.green(`✓ Loaded LINEAR_API_KEY from ${envFile}`));
+    console.log(chalk.gray('   To load it in your shell: source ' + envFile));
+    return;
+  }
+
+  console.log(chalk.yellow('\n⚠️  LINEAR_API_KEY is not set and no cached key found.'));
+  console.log(chalk.gray('   Create one at: https://linear.app/settings/api'));
+
+  const apiKey = await promptLinearApiKey();
+  if (!apiKey) {
+    console.log(chalk.gray('   Skipped. Export LINEAR_API_KEY before running `wt open`.'));
+    return;
+  }
+
+  const envFile = persistLinearApiKey(apiKey);
+  console.log(chalk.green(`✓ Saved to ${envFile} (chmod 600)`));
+  console.log(chalk.gray('   To load it in your current shell: source ' + envFile));
+  console.log(chalk.gray('   To load automatically, add to ~/.zshrc or ~/.bashrc:'));
+  console.log(chalk.gray(`     [ -f ${envFile} ] && source ${envFile}`));
+}
+
 export async function initCommand(): Promise<void> {
   try {
     const git = new GitOperations();
@@ -44,6 +136,9 @@ export async function initCommand(): Promise<void> {
       const provider = await promptTicketingProvider();
       config.setTicketingProvider(provider);
       console.log(chalk.green(`✓ Updated ticketing provider to ${provider}`));
+      if (provider === 'linear') {
+        await ensureLinearApiKey();
+      }
       return;
     }
 
@@ -51,6 +146,10 @@ export async function initCommand(): Promise<void> {
 
     const provider = await promptTicketingProvider();
     config.createDefaultConfig(provider);
+
+    if (provider === 'linear') {
+      await ensureLinearApiKey();
+    }
 
     console.log(chalk.green('\n✓ Configuration created successfully!'));
     console.log(chalk.gray('\nDetected project information:'));

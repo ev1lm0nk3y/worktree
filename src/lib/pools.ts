@@ -3,7 +3,6 @@ import { load } from 'js-yaml';
 import path from 'path';
 import os from 'os';
 import chalk from 'chalk';
-import { Archetype } from './archetypes';
 
 export interface PoolConfig {
   description: string;
