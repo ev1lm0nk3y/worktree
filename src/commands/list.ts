@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { GitOperations } from '../lib/git.js';
 import { TmuxOperations } from '../lib/tmux.js';
 import { ConfigManager } from '../lib/config.js';
@@ -10,31 +9,27 @@ export async function listCommand(): Promise<void> {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
     const tmux = new TmuxOperations(config.getSessionName());
-    
+
     const worktrees = git.listWorktrees();
     const tmuxWindows = tmux.listWindows();
-    
+
     if (worktrees.length === 0) {
-      console.log(chalk.yellow('No worktrees found'));
+      console.log('No worktrees found');
       return;
     }
-    
-    console.log(chalk.bold('\nWorktrees:\n'));
-    
+
+    console.log('\nWorktrees:\n');
+
     for (const worktree of worktrees) {
-      // Skip the main worktree
       if (worktree.path === git.repoRoot) continue;
-      
-      // Extract issue number from branch name
+
       const issueMatch = worktree.branch.match(/issue-(\d+)/);
       const issueNumber = issueMatch ? issueMatch[1] : null;
-      
-      // Check if has tmux window
+
       const windowName = issueNumber ? `issue-${issueNumber}` : null;
       const hasWindow = windowName ? tmuxWindows.some(w => w.name === windowName) : false;
       const window = hasWindow ? tmuxWindows.find(w => w.name === windowName) : null;
-      
-      // Get last modified time
+
       let lastModified = 'Unknown';
       const claudePath = path.join(worktree.path, 'CLAUDE.md');
       if (existsSync(claudePath)) {
@@ -43,7 +38,7 @@ export async function listCommand(): Promise<void> {
         const diff = now.getTime() - stats.mtime.getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const days = Math.floor(hours / 24);
-        
+
         if (days > 0) {
           lastModified = `${days}d ago`;
         } else if (hours > 0) {
@@ -52,39 +47,34 @@ export async function listCommand(): Promise<void> {
           lastModified = 'Recently';
         }
       }
-      
-      // Format output
-      let status = chalk.gray(worktree.branch);
-      if (issueNumber) {
-        status = chalk.cyan(`Issue #${issueNumber}`);
-      }
-      
-      let tmuxStatus = chalk.dim('No window');
+
+      const status = issueNumber ? `Issue #${issueNumber}` : worktree.branch;
+
+      let tmuxStatus = 'No window';
       if (hasWindow && window) {
-        tmuxStatus = chalk.green(`Window ${window.index}`);
+        tmuxStatus = `Window ${window.index}`;
         if (window.active) {
-          tmuxStatus += chalk.yellow(' (active)');
+          tmuxStatus += ' (active)';
         }
         if (window.panes > 1) {
-          tmuxStatus += chalk.gray(` [${window.panes} panes]`);
+          tmuxStatus += ` [${window.panes} panes]`;
         }
       }
-      
-      console.log(`${status} - ${chalk.dim(path.basename(worktree.path))}`);
+
+      console.log(`${status} - ${path.basename(worktree.path)}`);
       console.log(`  Path: ${worktree.path}`);
       console.log(`  Tmux: ${tmuxStatus}`);
       console.log(`  Modified: ${lastModified}`);
       console.log('');
     }
-    
-    // Show tmux session info
+
     if (tmux.hasSession()) {
-      console.log(chalk.dim(`\nTmux session: ${config.getSessionName()}`));
-      console.log(chalk.dim(`Active windows: ${tmuxWindows.length}`));
+      console.log(`\nTmux session: ${config.getSessionName()}`);
+      console.log(`Active windows: ${tmuxWindows.length}`);
     }
-    
+
   } catch (error: any) {
-    console.error(chalk.red(`Error: ${error.message}`));
+    console.error(`Error: ${error.message}`);
     process.exit(1);
   }
 }
