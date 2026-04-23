@@ -59,7 +59,7 @@ export async function listCommand(): Promise<void> {
         status = chalk.cyan(`Issue #${issueNumber}`);
       }
       
-      let tmuxStatus = chalk.gray('No window');
+      let tmuxStatus = chalk.dim('No window');
       if (hasWindow && window) {
         tmuxStatus = chalk.green(`Window ${window.index}`);
         if (window.active) {
@@ -70,17 +70,17 @@ export async function listCommand(): Promise<void> {
         }
       }
       
-      console.log(`${status} - ${chalk.gray(path.basename(worktree.path))}`);
-      console.log(`  Path: ${chalk.gray(worktree.path)}`);
+      console.log(`${status} - ${chalk.dim(path.basename(worktree.path))}`);
+      console.log(`  Path: ${worktree.path}`);
       console.log(`  Tmux: ${tmuxStatus}`);
-      console.log(`  Modified: ${chalk.gray(lastModified)}`);
+      console.log(`  Modified: ${lastModified}`);
       console.log('');
     }
     
     // Show tmux session info
     if (tmux.hasSession()) {
-      console.log(chalk.gray(`\nTmux session: ${config.getSessionName()}`));
-      console.log(chalk.gray(`Active windows: ${tmuxWindows.length}`));
+      console.log(chalk.dim(`\nTmux session: ${config.getSessionName()}`));
+      console.log(chalk.dim(`Active windows: ${tmuxWindows.length}`));
     }
     
   } catch (error: any) {
