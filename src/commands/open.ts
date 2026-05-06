@@ -102,8 +102,11 @@ export async function openCommand(issueNumber: string, description?: string, opt
     console.log(chalk.gray(`  Workers: ${deployedPool.workers.join(', ')}`));
   }
 
+  // Pools define workers in addition to the coordinator (worker 1), so add 1
+  // when the pool enables a coordinator (default true).
+  const poolHasCoordinator = deployedPool ? deployedPool.coordinator?.enable !== false : false;
   const workerCount = deployedPool
-    ? deployedPool.workers.length
+    ? deployedPool.workers.length + (poolHasCoordinator ? 1 : 0)
     : (options?.workers !== undefined ? parseInt(options.workers, 10) : config.getDefaultWorkers());
 
   if (workerCount < 1 || workerCount > 5) {
@@ -232,10 +235,12 @@ export async function openCommand(issueNumber: string, description?: string, opt
       
       // Get archetypes for workers 2+
       if (deployedPool && workerCount > 1) {
-        // Pool-driven: workers[0] is the coordinator (worker 1); 1..N become workers 2..N
+        // Pool-driven: worker 1 is the hardcoded Coordinator; pool.workers[0..N-1]
+        // map to workers 2..N+1 (i.e. i=2 -> workers[0]).
+        const archetypeOffset = poolHasCoordinator ? 2 : 1;
         console.log(chalk.gray(`Assigning archetypes from pool "${deployedPool.name}"...\n`));
         for (let i = 2; i <= workerCount; i++) {
-          const archetypeId = deployedPool.workers[i - 1];
+          const archetypeId = deployedPool.workers[i - archetypeOffset];
           const archetype = getArchetypeById(archetypeId);
           if (!archetype) {
             console.error(chalk.red(`Error: Unknown archetype "${archetypeId}" in pool`));

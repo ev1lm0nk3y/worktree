@@ -87,6 +87,15 @@ export class GitOperations {
       }
     }
 
+    if (current.path && current.commit) {
+      worktrees.push({
+        path: current.path,
+        branch: current.branch || '',
+        commit: current.commit,
+        isLocked: current.isLocked || false
+      });
+    }
+
     return worktrees;
   }
 
