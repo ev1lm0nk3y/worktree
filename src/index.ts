@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { openCommand } from './commands/open.js';
+import { createCommand } from './commands/create.js';
 import { splitCommand } from './commands/split.js';
 import { listCommand } from './commands/list.js';
 import { removeCommand } from './commands/remove.js';
@@ -13,7 +14,7 @@ const program = new Command();
 program
   .name('worktree')
   .description('CLI tool for managing Git worktrees with GitHub issues and Claude Code integration')
-  .version('0.4.2');
+  .version('0.5.0');
 
 program
   .command('open <issue-number> [description]')
@@ -23,6 +24,11 @@ program
   .option('--watcher', 'Spawn an additional overseer worker to monitor progress')
   .option('--no-wizard', 'Skip archetype selection wizard and use defaults')
   .action(openCommand);
+
+program
+  .command('create [topic]')
+  .description('Start a new worktree without a ticket using a Guide to help define the task')
+  .action(createCommand);
 
 program
   .command('split <issue-number>')

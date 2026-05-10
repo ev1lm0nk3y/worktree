@@ -78,6 +78,20 @@ worktree open 123 -w 3 --watcher
 # 3 workers + 1 overseer monitoring them
 ```
 
+### Start Without a Ticket
+
+If you have a task that isn't yet a formal issue, you can start a worktree using a **Guide**:
+
+```bash
+# Prompts for a topic if omitted
+worktree create
+
+# Provide a specific topic
+worktree create "refactor-auth-logic"
+```
+
+This launches a conversational archetype ("The Guide") to help you refine your goals and expected outcomes before implementation begins. The Guide will generate a `WORKTREE_COORDINATION.md` file based on your discussion.
+
 > `--deploy-pool` and `-w/--workers` are mutually exclusive — a pool defines its own worker count and archetype assignments.
 
 ### Split Pane
