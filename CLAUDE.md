@@ -24,6 +24,10 @@ Single-process CLI. `src/index.ts` wires `commander` subcommands to handlers in 
 - `lib/tmux.ts` — `TmuxOperations` owns session/window/pane lifecycle. Session name comes from config (defaults to `<project>_workers`). Each issue is one tmux window named `issue-<n>`; additional workers are split panes (alternating horizontal/vertical). Claude is launched by `send-keys`-ing `claude` + Enter into a captured `pane_id`, then — after a fixed 5s init delay — send-keys-ing the prompt and Enter. iTerm attach uses a `/tmp/.tmux-<session>-iterm` marker file to detect first-attach vs. switch.
 - `lib/config.ts` — `ConfigManager` loads `.worktree.yml` from repo root. When absent, commands are auto-detected from `package.json` / `Cargo.toml` / `pyproject.toml` / `requirements.txt`. `worktree init` writes a default config.
 
+## Agent Orchestration
+
+As an AI agent, you can orchestrate multi-worker workflows using the `wt` CLI. See [agent-instructions.md](agent-instructions.md) for the full guide on team deployment, dynamic scaling via `wt split`, and coordination protocols.
+
 Context files written into each worktree (and appended to its `.gitignore` by `templates/claude.md.ts:ensureGitignore`):
 
 - `CLAUDE.md` — generated from `templates/claude.md.ts` using issue details + project context + commands.
