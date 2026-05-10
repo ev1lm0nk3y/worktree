@@ -96,7 +96,11 @@ This launches a conversational archetype ("The Guide") to help you refine your g
 
 ## AI Agent Orchestration
 
-This tool is designed to be used by both humans and AI agents. It includes built-in instructions to teach **Gemini CLI** and **Claude Code** how to orchestrate multi-worker workflows.
+This tool is designed to be used by both humans and AI agents. It includes built-in instructions to teach **Gemini CLI** and **Claude Code** how to orchestrate multi-worker workflows. Once installed, your AI should be able to handle requests such as:
+   - "Hey, use the worktree tool to start a new feature for 'user-settings-page'."
+   - "Open issue #123 with a team of researchers."
+   - "Add a detective worker to my current session."
+   - "Start a review of this session."
 
 ### Gemini CLI
 A `worktree-orchestrator.skill` is provided in the repository. Once installed, Gemini can autonomously:
