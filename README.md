@@ -11,6 +11,8 @@ A powerful CLI tool for managing Git worktrees with GitHub or Linear issues and 
 - 📝 **Contextual Documentation** - Auto-generated CLAUDE.md with project info
 - ⚡ **Smart Commands** - Quick access to development commands
 - 👁️ **Progress Monitoring** - Optional overseer worker that tracks progress
+- 🧭 **Informal Task Scoping** - Start without a ticket using the **Guide** archetype
+- 🤖 **AI Agent Orchestration** - Gemini and Claude can autonomously manage worktrees
 - 🎭 **Coding Agent Archetypes** - Assign specialized roles to multiple workers
 - 🧩 **Worker Pools** - Deploy pre-configured archetype teams (Researchers, Coders, Reviewers) in one command
 
@@ -20,9 +22,9 @@ A powerful CLI tool for managing Git worktrees with GitHub or Linear issues and 
 - tmux
 - iTerm2 (macOS)
 - Claude Code CLI (`claude`)
-- One of:
-  - GitHub CLI (`gh`) — `brew install gh`, for GitHub Issues
-  - `LINEAR_API_KEY` env var — from https://linear.app/settings/api, for Linear
+- **Ticketing Access:**
+  - **GitHub:** Requires GitHub CLI (`gh`) — `brew install gh`. Run `gh auth login` to authenticate.
+  - **Linear:** Requires `LINEAR_API_KEY` env var — from https://linear.app/settings/api.
 
 ## Installation
 
@@ -91,6 +93,19 @@ worktree create "refactor-auth-logic"
 ```
 
 This launches a conversational archetype ("The Guide") to help you refine your goals and expected outcomes before implementation begins. The Guide will generate a `WORKTREE_COORDINATION.md` file based on your discussion.
+
+## AI Agent Orchestration
+
+This tool is designed to be used by both humans and AI agents. It includes built-in instructions to teach **Gemini CLI** and **Claude Code** how to orchestrate multi-worker workflows.
+
+### Gemini CLI
+A `worktree-orchestrator.skill` is provided in the repository. Once installed, Gemini can autonomously:
+- Start new tasks via `wt create`.
+- Deploy specialized teams using `--deploy-pool`.
+- Scale active sessions with `wt split`.
+
+### Claude Code
+The `CLAUDE.md` and `agent-instructions.md` files provide the necessary context for Claude to act as a coordinator and spawn additional workers when tasks become complex.
 
 > `--deploy-pool` and `-w/--workers` are mutually exclusive — a pool defines its own worker count and archetype assignments.
 
@@ -240,6 +255,7 @@ When using multiple workers, you can assign specialized roles:
 - 🚀 **The Explorer** - Innovation & alternative approaches
 - 🎨 **The Aesthete** - Elegant solutions & simplicity
 - ⚔️ **The Adversary** - Adversarial review & red-teaming (drives the `init-adversarial-review` flow)
+- 🧭 **The Guide** - Informal requirements gathering & task scoping
 
 ## Worker Pools
 
