@@ -6,6 +6,7 @@ import { createCommand } from './commands/create.js';
 import { splitCommand } from './commands/split.js';
 import { listCommand } from './commands/list.js';
 import { removeCommand } from './commands/remove.js';
+import { closeCommand } from './commands/close.js';
 import { initCommand } from './commands/init.js';
 import { tldrCommand } from './commands/tldr.js';
 
@@ -43,6 +44,11 @@ program
   .command('list')
   .description('List all worktrees and their status')
   .action(listCommand);
+
+program
+  .command('close <issue-number>')
+  .description('Close the tmux window for an issue without removing the worktree')
+  .action(closeCommand);
 
 program
   .command('remove <issue-number>')
