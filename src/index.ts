@@ -5,6 +5,7 @@ import { openCommand } from './commands/open';
 import { splitCommand } from './commands/split';
 import { listCommand } from './commands/list';
 import { removeCommand } from './commands/remove';
+import { closeCommand } from './commands/close';
 import { initCommand } from './commands/init';
 import { tldrCommand } from './commands/tldr';
 
@@ -34,6 +35,11 @@ program
   .command('list')
   .description('List all worktrees and their status')
   .action(listCommand);
+
+program
+  .command('close <issue-number>')
+  .description('Close the tmux window for an issue without removing the worktree')
+  .action(closeCommand);
 
 program
   .command('remove <issue-number>')
