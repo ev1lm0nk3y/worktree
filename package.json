@@ -1,6 +1,6 @@
 {
   "name": "@agenttools/worktree",
-  "version": "0.5.0",
+  "version": "1.1.2",
   "description": "CLI tool for managing Git worktrees with GitHub issues and Claude Code integration",
   "main": "dist/index.js",
   "type": "module",
