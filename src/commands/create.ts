@@ -1,11 +1,7 @@
 import chalk from 'chalk';
-import ora from 'ora';
-import { writeFileSync } from 'fs';
-import path from 'path';
 import { GitOperations } from '../lib/git.js';
 import { TmuxOperations } from '../lib/tmux.js';
 import { ConfigManager } from '../lib/config.js';
-import { generateClaudeMd, ensureGitignore } from '../templates/claude.md.js';
 import { getArchetypeById } from '../lib/archetypes.js';
 import * as readline from 'readline';
 
@@ -16,105 +12,98 @@ async function promptForTopic(): Promise<string> {
   });
 
   return new Promise((resolve) => {
-    rl.question(chalk.yellow('What are you working on today? (short topic for branch name): '), (answer) => {
+    rl.question(chalk.yellow('What do you want to build or change? (brief description): '), (answer) => {
       rl.close();
-      resolve(answer.trim() || 'new-feature');
+      resolve(answer.trim() || 'new-task');
     });
   });
 }
 
 export async function createCommand(topic?: string): Promise<void> {
-  const spinner = ora();
-
-  // Initialize operations
   const git = new GitOperations();
   const config = new ConfigManager(git.repoRoot);
   const tmux = new TmuxOperations(config.getSessionName());
 
   try {
-    // 1. Get topic for branch name if not provided
     const resolvedTopic = topic || await promptForTopic();
     const slugifiedTopic = resolvedTopic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const issueNumber = `dynamic-${slugifiedTopic}`;
-    const worktreePath = git.getWorktreePath(issueNumber, resolvedTopic);
-    const windowName = `issue-${issueNumber}`;
+    const windowName = `guide-${slugifiedTopic}`.slice(0, 32);
 
-    // 2. Check if worktree already exists
-    if (git.worktreeExists(worktreePath)) {
-      console.log(chalk.yellow(`⚠️  Worktree already exists at: ${worktreePath}`));
-      if (tmux.hasWindow(windowName)) {
-        console.log(chalk.blue('→ Switching to existing window...'));
-        tmux.switchToWindow(windowName);
-        return;
-      }
+    if (tmux.hasWindow(windowName)) {
+      console.log(chalk.blue(`→ Switching to existing Guide session for: ${resolvedTopic}`));
+      tmux.switchToWindow(windowName);
+      return;
     }
 
-    // 3. Create worktree
-    spinner.start(`Creating worktree for topic: ${resolvedTopic}...`);
-    // Note: We need a custom version of createWorktree or handle branch creation manually here
-    // since GitOperations.createWorktree usually expects an issueNumber for the branch name.
-    // For now, let's assume we can pass the branchName directly or adapt the lib.
-    
-    // We'll use a slightly different approach: manually run the git commands if the lib doesn't support custom branch names.
-    // But looking at GitOperations, let's see if we can use it.
-    git.createWorktree(issueNumber, resolvedTopic);
-    spinner.succeed(`Created worktree at: ${worktreePath}`);
-
-    // 4. Generate CLAUDE.md (minimal version since no ticket exists)
-    const claudeContent = generateClaudeMd({
-      issueNumber,
-      branchName: git.createBranchName(issueNumber, resolvedTopic),
-      issue: {
-        identifier: issueNumber,
-        title: resolvedTopic,
-        body: 'Dynamic task created via `wt create`. Use The Guide to define requirements.',
-        url: '',
-        labels: [],
-        state: 'open'
-      },
-      provider: 'github', // default
-      projectName: config.getProjectName(),
-      customContext: config.getClaudeContext(),
-      commands: config.getCommands()
-    });
-
-    const claudePath = path.join(worktreePath, 'CLAUDE.md');
-    writeFileSync(claudePath, claudeContent);
-    console.log(chalk.green('✓ Created CLAUDE.md'));
-
-    // 5. Ensure .gitignore
-    ensureGitignore(worktreePath);
-    console.log(chalk.green('✓ Added context files to .gitignore'));
-
-    // 6. Launch The Guide
     const guideArchetype = getArchetypeById('guide');
     if (!guideArchetype) {
-        throw new Error('Guide archetype not found');
+      throw new Error('Guide archetype not found');
     }
 
-    console.log(chalk.blue('\nOpening The Guide...'));
-    const guidePrompt = `${guideArchetype.prompt}\n\nObjective: ${resolvedTopic}`;
-    
-    console.log(chalk.gray('\nPrompt:'));
-    console.log(chalk.gray(guidePrompt));
+    const provider = config.getTicketingProvider();
 
-    tmux.launchClaudeWithPrompt(windowName, worktreePath, guidePrompt);
+    const guidePrompt = buildGuidePrompt(guideArchetype.prompt, resolvedTopic, provider);
 
-    // 7. Open iTerm
+    // Launch Guide in the main repo — no worktree created yet
+    console.log(chalk.blue('\nLaunching The Guide...'));
+    console.log(chalk.gray(`Session: ${config.getSessionName()}`));
+    console.log(chalk.gray(`Window: ${windowName}`));
+    console.log(chalk.gray(`Working dir: ${git.repoRoot}`));
+
+    tmux.launchClaudeWithPrompt(
+      windowName,
+      git.repoRoot,
+      guidePrompt,
+      { instanceName: 'The Guide', color: guideArchetype.color }
+    );
+
     const windows = tmux.listWindows();
     const window = windows.find(w => w.name === windowName);
     if (window) {
       tmux.openITerm(window.index, config.getItermOpenMode(), config.getItermFocus());
     }
 
-    console.log(chalk.green('\n✓ The Guide has been launched!'));
-    console.log(chalk.gray(`\nSession: ${config.getSessionName()}`));
-    console.log(chalk.gray(`Window: ${windowName}`));
-    console.log(chalk.gray(`Worktree: ${worktreePath}`));
+    console.log(chalk.green('\n✓ The Guide is ready.'));
+    console.log(chalk.gray('Once The Guide creates a ticket and calls `wt open <id>`, the worktree will be created automatically.'));
 
   } catch (error: any) {
-    spinner.fail();
     console.error(chalk.red(`Error: ${error.message}`));
     process.exit(1);
   }
+}
+
+function buildGuidePrompt(basePrompt: string, topic: string, provider: string): string {
+  const ticketInstructions = provider === 'linear'
+    ? [
+        'To create the ticket in Linear, use the Linear MCP server tools (mcp__linear__createIssue) if available,',
+        'or fall back to the Linear GraphQL API via curl using the LINEAR_API_KEY environment variable.',
+        'The ticket identifier will be returned in the response (e.g. LIN-123 or ENG-42).',
+      ].join(' ')
+    : [
+        'To create the ticket in GitHub, run: gh issue create --title "<title>" --body "<body>"',
+        'The issue number will be printed on success (e.g. #42).',
+      ].join(' ');
+
+  return [
+    basePrompt,
+    '',
+    `## Your task`,
+    `Topic: ${topic}`,
+    '',
+    `## Workflow`,
+    '1. Have a brief conversation with the user to clarify scope, acceptance criteria, and edge cases.',
+    '2. Once both you and the user are satisfied with the definition, create a ticket in the project\'s ticketing system.',
+    `   ${ticketInstructions}`,
+    '3. After the ticket is created, ask the user one final question about how they want to staff the work:',
+    '   "How should we staff this? Options:"',
+    '   "  • Single worker (default) — `wt open <id>`"',
+    '   "  • Multiple workers with archetype selection — `wt open <id> -w <2-5>`"',
+    '   "  • A pre-configured pool — `wt open <id> --deploy-pool [researchers|coders|reviewers]`"',
+    '   "  • Any of the above with an overseer — add `--watcher`"',
+    '   Wait for the user\'s answer, then construct and run the appropriate `wt open` command.',
+    '4. Confirm the worktree was created and tell the user the ticket ID, worktree path, and which workers were deployed.',
+    '',
+    'Do NOT create the worktree manually or generate a WORKTREE_COORDINATION.md yourself —',
+    '`wt open` handles all of that using the ticket content you just created.',
+  ].join('\n');
 }
