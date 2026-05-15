@@ -1,0 +1,25 @@
+name: worktree
+session: worktree_workers
+ticketing: github
+iterm:
+  open: window
+  focus: true
+layout: tiled
+workers: 1
+claude_context: |
+  # worktree
+
+  Read CLAUDE.md for context on this repo. All new worktrees should maintain a PR_DESCRIPTION.md
+  file which caches the contents of the ticket or issue.
+
+  A WORKTREE_COORDINATION.md doc should be used to maange the work between multiple workers.
+
+  A CLAUDE_WORKTREE.md doc should be constantly updated to retain context key for Claude's
+  operation within this repo
+
+  All 3 of those files should be in .gitignore
+
+commands:
+  dev: npm run dev
+  lint: npm run lint
+  build: npm run build
