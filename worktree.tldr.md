@@ -8,7 +8,15 @@
 
 `worktree init`
 
-- Create or switch to a worktree for a GitHub issue:
+- Scope a new task, create a ticket, and provision a worktree via The Guide:
+
+`worktree create`
+
+- Start The Guide with an initial topic:
+
+`worktree create "{{topic}}"`
+
+- Create or switch to a worktree for a GitHub or Linear issue:
 
 `worktree open {{issue_number}}`
 

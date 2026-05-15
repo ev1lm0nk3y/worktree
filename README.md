@@ -11,7 +11,7 @@ A powerful CLI tool for managing Git worktrees with GitHub or Linear issues and 
 - 📝 **Contextual Documentation** - Auto-generated CLAUDE.md with project info
 - ⚡ **Smart Commands** - Quick access to development commands
 - 👁️ **Progress Monitoring** - Optional overseer worker that tracks progress
-- 🧭 **Informal Task Scoping** - Start without a ticket using the **Guide** archetype
+- 🧭 **Guided Task Scoping** - Start without a ticket; The Guide scopes requirements, creates the ticket, and provisions the worktree
 - 🤖 **AI Agent Orchestration** - Gemini and Claude can autonomously manage worktrees
 - 🎭 **Coding Agent Archetypes** - Assign specialized roles to multiple workers
 - 🧩 **Worker Pools** - Deploy pre-configured archetype teams (Researchers, Coders, Reviewers) in one command
@@ -82,17 +82,24 @@ worktree open 123 -w 3 --watcher
 
 ### Start Without a Ticket
 
-If you have a task that isn't yet a formal issue, you can start a worktree using a **Guide**:
+If you have a task that isn't yet a formal issue, use `wt create` to scope it first:
 
 ```bash
 # Prompts for a topic if omitted
 worktree create
 
-# Provide a specific topic
+# Provide a starting topic
 worktree create "refactor-auth-logic"
 ```
 
-This launches a conversational archetype ("The Guide") to help you refine your goals and expected outcomes before implementation begins. The Guide will generate a `WORKTREE_COORDINATION.md` file based on your discussion.
+This launches **The Guide** — a conversational archetype that runs in the main repository (no worktree is created yet). The Guide:
+
+1. Chats with you to clarify scope, acceptance criteria, and edge cases.
+2. Creates a ticket in your configured ticketing provider (Linear or GitHub).
+3. Asks how you want to staff the work (single worker, multi-worker, pool, overseer).
+4. Calls `wt open <ticket-id> [flags]` to create the properly-named worktree and launch workers.
+
+The worktree is always created from a real ticket identifier, so branch names, `CLAUDE.md`, and tmux windows all reflect the actual ticket from the start.
 
 ## AI Agent Orchestration
 
