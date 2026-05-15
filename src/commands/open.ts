@@ -5,7 +5,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { GitOperations } from '../lib/git.js';
 import { getTicketOperations } from '../lib/ticketing.js';
-import { TmuxOperations } from '../lib/tmux.js';
+import { TmuxOperations, ClaudeInstanceConfig } from '../lib/tmux.js';
 import { ConfigManager } from '../lib/config.js';
 import { generateClaudeMd, ensureGitignore } from '../templates/claude.md.js';
 import { generateCoordinationMd, generateWorkerPrompt } from '../templates/coordination.md.js';
@@ -13,6 +13,7 @@ import { generateOverseerMd, generateOverseerPrompt } from '../templates/oversee
 import { ARCHETYPES, Archetype, getArchetypeById, getDefaultArchetypeForWorker } from '../lib/archetypes.js';
 import { PoolManager, ArchetypePool } from '../lib/pools.js';
 import { selectPoolInteractive } from '../lib/pool-selection.js';
+import { addWorker } from '../lib/worker-registry.js';
 import * as readline from 'readline';
 
 interface OpenOptions {
@@ -226,7 +227,8 @@ export async function openCommand(issueNumber: string, description?: string, opt
       const singleWorkerPrompt = `Solve the issue described in CLAUDE.md`;
       console.log(chalk.gray('\nPrompt:'));
       console.log(chalk.gray(singleWorkerPrompt));
-      tmux.launchClaude(windowName, worktreePath, issueNumber);
+      const paneId = tmux.launchClaude(windowName, worktreePath, issueNumber);
+      addWorker(worktreePath, issueNumber, 1, paneId, 'coordinator');
     } else {
       console.log(chalk.blue(`\nOpening ${workerCount} Claude workers...`));
       
@@ -282,12 +284,15 @@ export async function openCommand(issueNumber: string, description?: string, opt
       const worker1Prompt = generateWorkerPrompt(1, workerCount, issueNumber);
       console.log(chalk.gray('\nWorker 1 prompt:'));
       console.log(chalk.gray(worker1Prompt));
-      tmux.launchClaudeWithPrompt(
-        windowName, 
-        worktreePath, 
-        worker1Prompt
+      const coordinatorConfig: ClaudeInstanceConfig = { instanceName: 'Coordinator', color: 'colour39' };
+      const coordinator1PaneId = tmux.launchClaudeWithPrompt(
+        windowName,
+        worktreePath,
+        worker1Prompt,
+        coordinatorConfig
       );
-      
+      addWorker(worktreePath, issueNumber, 1, coordinator1PaneId, 'coordinator');
+
       // Launch additional workers in split panes
       for (let i = 2; i <= workerCount; i++) {
         await new Promise(resolve => setTimeout(resolve, 1000)); // Small delay between splits
@@ -296,33 +301,40 @@ export async function openCommand(issueNumber: string, description?: string, opt
         const workerPrompt = generateWorkerPrompt(i, workerCount, issueNumber, archetype);
         console.log(chalk.gray(`\nWorker ${i} prompt:`));
         console.log(chalk.gray(workerPrompt));
-        tmux.launchClaudeInPaneWithPrompt(
+        const archetypeConfig: ClaudeInstanceConfig | undefined = archetype
+          ? { instanceName: `${archetype.emoji} ${archetype.name}`, color: archetype.color }
+          : undefined;
+        const workerPaneId = tmux.launchClaudeInPaneWithPrompt(
           windowName,
           worktreePath,
           workerPrompt,
           vertical,
-          i
+          i,
+          archetypeConfig
         );
+        addWorker(worktreePath, issueNumber, i, workerPaneId, archetype?.id ?? 'unknown');
       }
     }
-    
+
     // Launch watcher if requested (via flag or pool config)
     const poolWantsWatcher = deployedPool?.watcher?.enable === true;
     if (options?.watcher || poolWantsWatcher) {
       console.log(chalk.blue('\nSpawning Overseer worker...'));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Always use vertical split for the watcher to keep it separate
+
       const overseerPrompt = generateOverseerPrompt(issueNumber);
       console.log(chalk.gray('\nOverseer prompt:'));
       console.log(chalk.gray(overseerPrompt));
-      tmux.launchClaudeInPaneWithPrompt(
+      const overseerConfig: ClaudeInstanceConfig = { instanceName: 'Overseer', color: 'colour208' };
+      const overseerPaneId = tmux.launchClaudeInPaneWithPrompt(
         windowName,
         worktreePath,
         overseerPrompt,
         true,  // vertical split
-        0      // Special worker number 0 for overseer
+        0,     // Special worker number 0 for overseer
+        overseerConfig
       );
+      addWorker(worktreePath, issueNumber, 0, overseerPaneId, 'overseer');
     }
     
     // Apply tmux layout if configured (and we have multiple panes)

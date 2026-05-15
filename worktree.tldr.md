@@ -35,3 +35,11 @@
 - Show quick examples and usage patterns:
 
 `worktree tldr`
+
+- Output shell completion script (auto-detects shell):
+
+`source <(worktree completions)`
+
+- Output completion script for a specific shell:
+
+`source <(worktree completions {{bash|zsh|fish}})`

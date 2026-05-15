@@ -2,6 +2,11 @@ import { execSync } from 'child_process';
 import { existsSync, writeFileSync, unlinkSync } from 'fs';
 import chalk from 'chalk';
 
+export interface ClaudeInstanceConfig {
+  instanceName?: string;  // passed as --name to claude CLI
+  color?: string;         // tmux colour for pane title and border styling
+}
+
 export interface TmuxWindow {
   index: number;
   name: string;
@@ -140,69 +145,87 @@ export class TmuxOperations {
     this.exec(`tmux send-keys -t "${target}" Enter`);
   }
 
-  launchClaude(windowName: string, workingDirectory: string, _issueNumber: string): void {
+  private buildClaudeCommand(instanceName?: string): string {
+    if (instanceName) {
+      // Use single quotes around the name so inner spaces survive tmux send-keys double-quoting
+      const escaped = instanceName.replace(/'/g, "'\\''");
+      return `claude --name '${escaped}'`;
+    }
+    return 'claude';
+  }
+
+  private applyPaneIdentity(paneId: string, config?: ClaudeInstanceConfig): void {
+    if (!config) return;
+    if (config.instanceName) {
+      const title = config.instanceName.replace(/'/g, "'\\''");
+      this.execSilent(`tmux select-pane -t "${paneId}" -T '${title}'`);
+    }
+    if (config.color) {
+      this.execSilent(`tmux select-pane -t "${paneId}" -P 'fg=${config.color},bg=default'`);
+    }
+  }
+
+  launchClaude(windowName: string, workingDirectory: string, _issueNumber: string, config?: ClaudeInstanceConfig): string {
     const { firstPaneId } = this.createWindow(windowName, workingDirectory);
-    
-    // Launch claude in the specific pane
-    this.sendKeys(firstPaneId, 'claude');
+    this.applyPaneIdentity(firstPaneId, config);
+
+    this.sendKeys(firstPaneId, this.buildClaudeCommand(config?.instanceName));
     this.sendEnter(firstPaneId);
-    
-    // Wait for Claude to initialize
+
     console.log(chalk.gray('Waiting for Claude to initialize...'));
     setTimeout(() => {
-      // Send the solve command to the specific pane
       this.sendKeys(firstPaneId, 'Solve the issue described in CLAUDE.md');
-      // Wait a second before sending enter
       setTimeout(() => {
         this.sendEnter(firstPaneId);
         console.log(chalk.green('✓ Sent solve command to Claude'));
       }, 1000);
     }, 5000);
+
+    return firstPaneId;
   }
 
-  launchClaudeWithPrompt(windowName: string, workingDirectory: string, prompt: string): void {
+  launchClaudeWithPrompt(windowName: string, workingDirectory: string, prompt: string, config?: ClaudeInstanceConfig): string {
     const { firstPaneId } = this.createWindow(windowName, workingDirectory);
-    
-    // Launch claude in the specific pane
-    this.sendKeys(firstPaneId, 'claude');
+    this.applyPaneIdentity(firstPaneId, config);
+
+    this.sendKeys(firstPaneId, this.buildClaudeCommand(config?.instanceName));
     this.sendEnter(firstPaneId);
-    
-    // Wait for Claude to initialize
+
     console.log(chalk.gray('Waiting for Claude to initialize...'));
     setTimeout(() => {
-      // Send the custom prompt to the specific pane
       this.sendKeys(firstPaneId, prompt);
-      // Wait a second before sending enter
       setTimeout(() => {
         this.sendEnter(firstPaneId);
         console.log(chalk.green('✓ Sent prompt to Claude (Worker 1)'));
       }, 1000);
     }, 5000);
+
+    return firstPaneId;
   }
 
   launchClaudeInPane(
-    windowName: string, 
-    workingDirectory: string, 
+    windowName: string,
+    workingDirectory: string,
     _issueNumber: string,
-    vertical: boolean = false
-  ): void {
+    vertical: boolean = false,
+    config?: ClaudeInstanceConfig
+  ): string {
     const paneId = this.splitPane(windowName, workingDirectory, vertical);
-    
-    // Launch claude in the new pane
-    this.sendKeys(paneId, 'claude');
+    this.applyPaneIdentity(paneId, config);
+
+    this.sendKeys(paneId, this.buildClaudeCommand(config?.instanceName));
     this.sendEnter(paneId);
-    
-    // Wait for Claude to initialize
+
     console.log(chalk.gray('Waiting for Claude to initialize...'));
     setTimeout(() => {
-      // Send the solve command
       this.sendKeys(paneId, 'Solve the issue described in CLAUDE.md');
-      // Wait a second before sending enter
       setTimeout(() => {
         this.sendEnter(paneId);
         console.log(chalk.green('✓ Sent solve command to Claude'));
       }, 1000);
     }, 5000);
+
+    return paneId;
   }
 
   launchClaudeInPaneWithPrompt(
@@ -210,26 +233,26 @@ export class TmuxOperations {
     workingDirectory: string,
     prompt: string,
     vertical: boolean = false,
-    workerNumber?: number
-  ): void {
+    workerNumber?: number,
+    config?: ClaudeInstanceConfig
+  ): string {
     const paneId = this.splitPane(windowName, workingDirectory, vertical);
-    
-    // Launch claude in the new pane
-    this.sendKeys(paneId, 'claude');
+    this.applyPaneIdentity(paneId, config);
+
+    this.sendKeys(paneId, this.buildClaudeCommand(config?.instanceName));
     this.sendEnter(paneId);
-    
-    // Wait for Claude to initialize
+
     console.log(chalk.gray('Waiting for Claude to initialize...'));
     setTimeout(() => {
-      // Send the custom prompt
       this.sendKeys(paneId, prompt);
-      // Wait a second before sending enter
       setTimeout(() => {
         this.sendEnter(paneId);
         const workerInfo = workerNumber === 0 ? ' (Overseer)' : workerNumber ? ` (Worker ${workerNumber})` : '';
         console.log(chalk.green(`✓ Sent prompt to Claude${workerInfo}`));
       }, 1000);
     }, 5000);
+
+    return paneId;
   }
 
   selectLayout(windowName: string, layout: string): void {
@@ -245,6 +268,21 @@ export class TmuxOperations {
     } catch {
       return 0;
     }
+  }
+
+  listPaneIds(windowName: string): string[] {
+    if (!this.hasWindow(windowName)) return [];
+    try {
+      const output = this.exec(`tmux list-panes -t "${this.sessionName}:${windowName}" -F "#{pane_id}"`);
+      return output.split('\n').filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  broadcastToPane(paneId: string, message: string): void {
+    this.sendKeys(paneId, message);
+    this.sendEnter(paneId);
   }
 
   openITerm(windowIndex: number, mode: 'window' | 'tab' | 'current' = 'window', focus: boolean = true): void {

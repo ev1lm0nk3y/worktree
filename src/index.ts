@@ -9,6 +9,7 @@ import { removeCommand } from './commands/remove.js';
 import { closeCommand } from './commands/close.js';
 import { initCommand } from './commands/init.js';
 import { tldrCommand } from './commands/tldr.js';
+import { completionsCommand } from './commands/completions.js';
 
 const program = new Command();
 
@@ -36,7 +37,7 @@ program
   .description('Split current tmux pane with new Claude instance')
   .option('-v, --vertical', 'Split vertically instead of horizontally')
   .option('-f, --focus', 'Focus the new pane after creation')
-  .option('-a, --archetype <id>', 'Assign archetype role: architect|detective|craftsman|explorer|aesthete|adversary')
+  .option('-a, --archetype <id>', 'Assign archetype role: architect|detective|craftsman|explorer|aesthete|adversary|sentinel|scribe|guide')
   .option('--no-wizard', 'Skip the archetype selection wizard')
   .action(splitCommand);
 
@@ -65,6 +66,11 @@ program
   .command('tldr')
   .description('Show quick examples and common usage patterns')
   .action(tldrCommand);
+
+program
+  .command('completions [shell]')
+  .description('Output shell completion script (bash, zsh, fish). Detects current shell if omitted.')
+  .action(completionsCommand);
 
 program.parse(process.argv);
 

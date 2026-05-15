@@ -46,19 +46,19 @@ export class PoolManager {
       Researchers: {
         description: 'Evaluate solutions, choose best approach, structure deployment',
         coordinator: { enable: true },
-        workers: ['architect', 'detective', 'explorer'],
+        workers: ['architect', 'explorer'],
         watcher: { enable: false }
       },
       Coders: {
         description: 'Implement from research output (add adversary later with split)',
         coordinator: { enable: true },
-        workers: ['craftsman', 'aesthete', 'detective'],
+        workers: ['craftsman', 'aesthete'],
         watcher: { enable: false }
       },
       Reviewers: {
         description: 'Final code quality and security review',
         coordinator: { enable: true },
-        workers: ['aesthete', 'detective', 'adversary'],
+        workers: ['detective', 'adversary', 'sentinel'],
         watcher: { enable: false }
       }
     };
@@ -108,7 +108,7 @@ export class PoolManager {
 
   validateWorkers(workers: string[]): boolean {
     // All worker names in pool should be valid archetype IDs
-    const validIds = ['architect', 'detective', 'craftsman', 'explorer', 'aesthete', 'adversary'];
+    const validIds = ['architect', 'detective', 'craftsman', 'explorer', 'aesthete', 'adversary', 'sentinel', 'scribe'];
     return workers.every(w => validIds.includes(w));
   }
 }

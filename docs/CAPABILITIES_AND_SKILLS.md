@@ -9,11 +9,13 @@ What this toolkit enables you to do.
 ### 1. **Multi-Perspective Problem Solving**
 Bring 3-6 different AI perspectives to a single problem simultaneously:
 - Architect designs the solution
-- Detective finds issues
+- Detective finds issues and edge cases
 - Craftsman implements
 - Explorer researches alternatives
-- Aesthete optimizes code quality
+- Aesthete optimizes for elegance and simplicity
 - Adversary challenges assumptions
+- Sentinel audits for security vulnerabilities
+- Scribe captures decisions and documentation
 
 **Skill:** Parallel problem solving with diverse expertise
 
@@ -47,8 +49,11 @@ Assign Claude specific roles optimized for tasks:
 - **Detective** - Problem analysis & debugging
 - **Craftsman** - Implementation & coding
 - **Explorer** - Research & experimentation
-- **Aesthete** - Code quality & optimization
-- **Adversary** - Security & edge case testing
+- **Aesthete** - Elegant solutions & API design
+- **Adversary** - Adversarial red-team review
+- **Sentinel** - Security review & threat modeling
+- **Scribe** - Documentation & knowledge capture
+- **Guide** - Requirements gathering & task scoping
 
 **Skill:** Expert role assignment for optimal output
 
@@ -80,19 +85,18 @@ Built-in adversary workflow:
 Move through distinct development phases with different teams:
 
 **Phase 1: Research** (Researchers pool)
-- Architect, Detective, Explorer evaluate options
+- Architect, Explorer evaluate options
 - Design best approach
 - Structure solution
 
 **Phase 2: Implementation** (Coders pool)
 - Craftsman builds it
-- Aesthete optimizes
-- Detective tests
+- Aesthete ensures elegance and simplicity
 
 **Phase 3: Review** (Reviewers pool)
-- Aesthete does final polish
-- Detective runs tests
-- Adversary reviews security
+- Detective finds edge cases and tests
+- Adversary red-teams the implementation
+- Sentinel audits for security vulnerabilities
 
 **Skill:** Structured multi-phase development
 
@@ -288,9 +292,9 @@ Transfer knowledge to codebase
 
 ### Comprehensive Code Review
 Reviewers pool covers:
-- Aesthete: Code quality, style, performance
 - Detective: Testing, edge cases, bugs
-- Adversary: Security, assumptions, exploits
+- Adversary: Red-team review, assumptions, exploits
+- Sentinel: Security audit, OWASP/CWE coverage, severity-rated findings
 
 ### Iterative Refinement
 With Adversary loop (default: 5 iterations):

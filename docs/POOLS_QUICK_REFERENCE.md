@@ -19,9 +19,9 @@ wt open SRE-526 --deploy-pool Coders --watcher
 
 | Pool | Workers | Purpose |
 |------|---------|---------|
-| **Researchers** | architect, detective, explorer | Evaluate solutions & design |
-| **Coders** | craftsman, aesthete, detective | Implement (add adversary later) |
-| **Reviewers** | aesthete, detective, adversary | Final quality & security review |
+| **Researchers** | architect, explorer | Evaluate solutions & design |
+| **Coders** | craftsman, aesthete | Implement (add adversary later) |
+| **Reviewers** | detective, adversary, sentinel | Final quality & security review |
 
 ## Common Workflows
 
@@ -74,11 +74,13 @@ pools:
 ❌ **Cannot do:**
 - `wt open SRE-526 --deploy-pool Coders -w 2` (mutually exclusive)
 
-## Architecture Names
+## Archetype Names
 
 ```
-architect, detective, craftsman, explorer, aesthete, adversary
+architect, detective, craftsman, explorer, aesthete, adversary, sentinel, scribe, guide
 ```
+
+The `-a` flag on `wt split` is case-insensitive and supports partial names (e.g. `Sentinel`, `sent`). Unrecognised input falls back to the interactive wizard.
 
 ## Generated Files
 

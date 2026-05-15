@@ -22,8 +22,7 @@ wt open SRE-526 --deploy-pool Researchers --watcher
 
 **Workers:**
 1. Architect - High-level design and structure thinking
-2. Detective - Investigation and problem analysis  
-3. Explorer - Experimentation and new ideas
+2. Explorer - Experimentation and new ideas
 
 **Use when:**
 - Solving complex problems with multiple solution paths
@@ -43,8 +42,7 @@ wt open SRE-526 --deploy-pool Researchers
 
 **Workers:**
 1. Craftsman - Implementation and coding
-2. Aesthete - Code quality and polish
-3. Detective - Testing and finding issues
+2. Aesthete - Elegant design & API quality
 
 **Use when:**
 - Implementing a well-defined task from Linear
@@ -70,9 +68,9 @@ wt split SRE-526 -a adversary
 **Purpose:** Final code quality and security review
 
 **Workers:**
-1. Aesthete - Code quality and polish
-2. Detective - Testing and security testing
-3. Adversary - Security review and edge case analysis
+1. Detective - Edge case analysis & testing
+2. Adversary - Adversarial red-team review
+3. Sentinel - Dedicated security & threat modeling
 
 **Use when:**
 - Final review before merge
@@ -166,11 +164,14 @@ When a pool is deployed, each worker gets assigned an archetype:
 | Archetype | Role | Best For |
 |-----------|------|----------|
 | **Architect** 🏗️ | High-level design & structure | System design, architecture decisions |
-| **Detective** 🔍 | Investigation & analysis | Problem analysis, debugging, security |
+| **Detective** 🔍 | Investigation & analysis | Problem analysis, debugging, edge cases |
 | **Craftsman** 🔧 | Implementation & coding | Writing code, feature development |
 | **Explorer** 🗺️ | Experimentation & learning | Research, new approaches, POCs |
-| **Aesthete** ✨ | Code quality & polish | Refactoring, optimization, styling |
-| **Adversary** ⚔️ | Security & edge cases | Challenge assumptions, find gaps |
+| **Aesthete** ✨ | Elegant solutions & API design | Simplicity, DX, "less is more" |
+| **Adversary** ⚔️ | Adversarial red-team review | Challenge assumptions, find gaps |
+| **Sentinel** 🛡️ | Security review & threat modeling | OWASP/CWE coverage, severity-rated findings |
+| **Scribe** 📝 | Documentation & knowledge capture | README, API docs, ADRs |
+| **Guide** 🧭 | Requirements gathering & scoping | Translating vague ideas to acceptance criteria |
 
 ## Workflow Examples
 
@@ -274,8 +275,9 @@ sudo dnf install fzf
 
 ### Archetypes not assigned correctly
 - Verify pool definition has correct archetype names
-- Valid archetypes: architect, detective, craftsman, explorer, aesthete, adversary
+- Valid archetypes: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`, `sentinel`, `scribe`, `guide`
 - Check for typos in `.claude/archetype-groups.yml`
+- Note: `-a` flag on `wt split` accepts case-insensitive and partial names; unrecognised input falls back to the interactive wizard
 
 ## Next Steps
 

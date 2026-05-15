@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-Single-process CLI. `src/index.ts` wires `commander` subcommands to handlers in `src/commands/` (`open`, `split`, `list`, `remove`, `init`, `tldr`). Each handler composes four `lib/` modules:
+Single-process CLI. `src/index.ts` wires `commander` subcommands to handlers in `src/commands/` (`open`, `split`, `list`, `remove`, `init`, `tldr`, `completions`). Each handler composes four `lib/` modules:
 
 - `lib/git.ts` — `GitOperations` wraps `git` via `execSync`. Worktree path convention: sibling directory of repo root named `issue-<n>[-<desc>]`. Branch name mirrors directory name. Description is slugified to `[a-z0-9-]`.
 - `lib/github.ts` — `GitHubOperations` shells out to `gh` to fetch issue JSON; a missing issue is a hard error in `open`.
@@ -35,6 +35,10 @@ Context files written into each worktree (and appended to its `.gitignore` by `t
 - `OVERSEER.md` — only when `--watcher` is set.
 
 Multi-worker flow in `commands/open.ts`: Worker 1 is always the Coordinator. Workers 2..N get archetypes from `lib/archetypes.ts` — either interactively via `selectArchetype` (readline wizard) or via `getDefaultArchetypeForWorker` when `--no-wizard`. Valid worker count is 1–5 (enforced). Prompts per worker are produced by `templates/coordination.md.ts:generateWorkerPrompt`; the overseer prompt by `templates/overseer.md.ts:generateOverseerPrompt`.
+
+Archetype resolution in `commands/split.ts` uses `resolveArchetype()` from `lib/archetypes.ts`, which matches case-insensitively and by partial name; unrecognised input falls back to the interactive wizard rather than hard-exiting. Nine archetypes are defined: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`, `sentinel`, `scribe`, `guide`.
+
+Pool composition (defined in `lib/pools.ts`): Researchers = `[architect, explorer]`, Coders = `[craftsman, aesthete]`, Reviewers = `[detective, adversary, sentinel]`. Custom pools load from `<repo>/.claude/archetype-groups.yml` then `~/.claude/archetype-groups.yml`.
 
 ## Gotchas
 

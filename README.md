@@ -131,7 +131,7 @@ worktree split 123 -a detective
 worktree split 123 --no-wizard
 ```
 
-Valid archetype ids: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`. The new pane is wired into `WORKTREE_COORDINATION.md` just like `open -w`.
+Archetype ids are matched case-insensitively and support partial names (e.g. `Adversary`, `adv`). If the input is ambiguous or unrecognised, the interactive wizard opens instead of erroring out. Valid ids: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`, `sentinel`, `scribe`, `guide`. The new pane is wired into `WORKTREE_COORDINATION.md` just like `open -w`.
 
 ### List Worktrees
 
@@ -144,6 +144,20 @@ Shows all worktrees with:
 - tmux window status
 - Last modified time
 - Number of panes
+
+### Shell Completions
+
+```bash
+# Auto-detects your current shell (bash, zsh, or fish)
+source <(worktree completions)
+
+# Explicit shell
+source <(worktree completions bash)    # add to ~/.bashrc
+source <(worktree completions zsh)     # add to ~/.zshrc
+worktree completions fish > ~/.config/fish/completions/wt.fish
+```
+
+Provides tab-completion for all subcommands, flags, archetype ids, pool names, and shell targets.
 
 ### Remove Worktree
 
@@ -259,6 +273,8 @@ When using multiple workers, you can assign specialized roles:
 - 🚀 **The Explorer** - Innovation & alternative approaches
 - 🎨 **The Aesthete** - Elegant solutions & simplicity
 - ⚔️ **The Adversary** - Adversarial review & red-teaming (drives the `init-adversarial-review` flow)
+- 🛡️ **The Sentinel** - Dedicated security review & threat modeling (OWASP/CWE, severity-rated findings)
+- 📝 **The Scribe** - Documentation & knowledge capture (README, API docs, ADRs)
 - 🧭 **The Guide** - Informal requirements gathering & task scoping
 
 ## Worker Pools
@@ -269,9 +285,9 @@ Worker pools are named, pre-configured teams of archetypes you can deploy with a
 
 | Pool | Workers | Purpose |
 |---|---|---|
-| **Researchers** | architect, detective, explorer | Evaluate solutions, choose best approach, structure deployment |
-| **Coders** | craftsman, aesthete, detective | Implement from research output (add adversary later with `split`) |
-| **Reviewers** | aesthete, detective, adversary | Final code quality and security review |
+| **Researchers** | architect, explorer | Evaluate solutions, choose best approach, structure deployment |
+| **Coders** | craftsman, aesthete | Implement from research output (add adversary later with `split`) |
+| **Reviewers** | detective, adversary, sentinel | Final code quality and security review |
 
 ### Usage
 
@@ -307,7 +323,7 @@ pools:
       enable: false   # set true to auto-spawn an overseer with this pool
 ```
 
-Valid archetype ids: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`. Custom pools appear alongside the built-ins in the interactive picker and in `--deploy-pool <name>`.
+Valid archetype ids: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`, `sentinel`, `scribe`, `guide`. Custom pools appear alongside the built-ins in the interactive picker and in `--deploy-pool <name>`.
 
 ## Linear Integration
 
@@ -356,7 +372,10 @@ Select archetype for Worker 2:
 4) 🚀  The Explorer - Innovation & alternatives
 5) 🎨  The Aesthete - Elegant solutions & simplicity
 6) ⚔️  The Adversary - Adversarial review & red-teaming
-Choice (1-6): 2
+7) 🛡️  The Sentinel - Security review & threat modeling
+8) 📝  The Scribe - Documentation & knowledge capture
+9) 🧭  The Guide - Requirements gathering & task scoping
+Choice (1-9): 2
 
 ✓ Worker 2 assigned as The Detective
 

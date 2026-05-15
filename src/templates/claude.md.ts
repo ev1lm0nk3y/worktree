@@ -164,13 +164,23 @@ CLAUDE.md
     if (!updated && gitignoreContent && !gitignoreContent.endsWith('\n')) {
       gitignoreContent += '\n';
     }
-    
     if (!updated) {
       gitignoreContent += '\n# claude code worktree context\n';
     }
-    
     gitignoreContent += 'OVERSEER.md\n';
+    updated = true;
   }
-  
+
+  // Check if .worktree-workers.json is already in .gitignore
+  if (!gitignoreContent.includes('.worktree-workers.json')) {
+    if (!updated && gitignoreContent && !gitignoreContent.endsWith('\n')) {
+      gitignoreContent += '\n';
+    }
+    if (!updated) {
+      gitignoreContent += '\n# claude code worktree context\n';
+    }
+    gitignoreContent += '.worktree-workers.json\n';
+  }
+
   fs.writeFileSync(gitignorePath, gitignoreContent);
 }

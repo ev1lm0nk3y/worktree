@@ -12,6 +12,7 @@ Full list of all `worktree` (or `wt`) CLI commands and actions.
 | `wt remove` | Delete worktree & window | `wt rm` |
 | `wt init` | Setup .worktree.yml config | - |
 | `wt tldr` | Quick reference | - |
+| `wt completions` | Output shell completion script | - |
 
 ---
 
@@ -122,7 +123,7 @@ wt split SRE-526 --vertical
 ### Options
 
 #### `-a, --archetype <id>`
-Assign specific archetype role
+Assign specific archetype role. Matching is case-insensitive and supports partial names; unrecognised input falls back to the interactive wizard.
 ```bash
 wt split SRE-526 -a architect
 wt split SRE-526 -a detective
@@ -130,6 +131,10 @@ wt split SRE-526 -a craftsman
 wt split SRE-526 -a explorer
 wt split SRE-526 -a aesthete
 wt split SRE-526 -a adversary
+wt split SRE-526 -a sentinel
+wt split SRE-526 -a scribe
+wt split SRE-526 -a Sentinel   # case-insensitive
+wt split SRE-526 -a sent       # partial match
 ```
 
 #### `-v, --vertical`
@@ -181,7 +186,7 @@ wt split SRE-526 -a explorer
 
 - ❌ Worktree not found for issue
 - ❌ Tmux window not found
-- ❌ Unknown archetype specified
+- ⚠️ Unrecognised archetype → falls back to interactive wizard
 
 ---
 
@@ -354,18 +359,21 @@ Shows common command examples and quick reference patterns.
 
 ---
 
-## Archetype Roles (6 types)
+## Archetype Roles (9 types)
 
-Each can be assigned to workers via `wt split -a <archetype>` or `wt open -w N`:
+Each can be assigned to workers via `wt split -a <archetype>` or `wt open -w N`. The `-a` flag is case-insensitive and supports partial names.
 
 | Archetype | Emoji | Purpose | Best For |
 |-----------|-------|---------|----------|
 | architect | 🏗️ | High-level design & structure | System architecture |
-| detective | 🔍 | Investigation & problem analysis | Debugging, security analysis |
+| detective | 🔍 | Investigation & problem analysis | Debugging, edge cases |
 | craftsman | 🔧 | Implementation & coding | Feature development |
 | explorer | 🗺️ | Experimentation & learning | R&D, new approaches |
-| aesthete | ✨ | Code quality & polish | Refactoring, optimization |
-| adversary | ⚔️ | Security & edge cases | Security review, edge cases |
+| aesthete | ✨ | Elegant solutions & API design | Simplicity, DX |
+| adversary | ⚔️ | Adversarial red-team review | Challenge assumptions, find gaps |
+| sentinel | 🛡️ | Security review & threat modeling | OWASP/CWE, severity-rated findings |
+| scribe | 📝 | Documentation & knowledge capture | README, API docs, ADRs |
+| guide | 🧭 | Requirements gathering & scoping | Translating ideas to acceptance criteria |
 
 ---
 
@@ -375,9 +383,9 @@ Pre-configured groupings deployable via `wt open --deploy-pool <name>`:
 
 | Pool | Workers | Purpose |
 |------|---------|---------|
-| **Researchers** | architect, detective, explorer | Evaluate solutions & design |
-| **Coders** | craftsman, aesthete, detective | Implement (add adversary later) |
-| **Reviewers** | aesthete, detective, adversary | Final quality & security |
+| **Researchers** | architect, explorer | Evaluate solutions & design |
+| **Coders** | craftsman, aesthete | Implement (add adversary later) |
+| **Reviewers** | detective, adversary, sentinel | Final quality & security |
 
 ---
 

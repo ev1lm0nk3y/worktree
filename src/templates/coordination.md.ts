@@ -124,6 +124,28 @@ Remember: Coordinate through this document to avoid conflicts and ensure efficie
 `;
 }
 
+export function generateNewWorkerEntry(workerNumber: number, archetype?: Archetype): string {
+  const timestamp = new Date().toISOString();
+  const header = archetype
+    ? `### Worker ${workerNumber} (${archetype.emoji} ${archetype.name}) — joined ${timestamp}`
+    : `### Worker ${workerNumber} — joined ${timestamp}`;
+
+  const role = archetype?.shortDescription ?? 'Supporting implementation';
+  const focus = archetype?.focus ?? 'Additional support';
+  const traits = archetype?.traits.slice(0, 4).map(t => `  - ${t}`).join('\n') ?? '  - Provide additional support';
+
+  return `\n${header}\n- **Role:** ${role}\n- **Focus:** ${focus}\n- **Responsibilities:**\n${traits}\n`;
+}
+
+export function generateAdversaryAlert(workerNumber: number): string {
+  const timestamp = new Date().toISOString();
+  return `\n---\n\n## ⚔️ ADVERSARY REVIEW IN PROGRESS (Worker ${workerNumber})\n\n**Started:** ${timestamp}\n\n**ALL WORKERS — ACTION REQUIRED:**\n1. **Coordinator (Worker 1):** Ensure all changes are committed before the Adversary begins review\n2. **All workers:** Check this document every 3 minutes for Adversary findings\n3. Address any flagged issues and mark them resolved in the Findings section below\n4. Do not consider the issue done until The Adversary posts a PASS verdict\n\n### Adversary Findings\n*Review in progress — check back in 3 minutes*\n\n### Adversary Verdict\n*Pending — treat as BLOCK until updated*\n`;
+}
+
+export function generateAdversaryBroadcast(issueNumber: string): string {
+  return `⚔️ The Adversary has joined this session and is reviewing all code changes for issue #${issueNumber}. Commit any uncommitted work now, then check WORKTREE_COORDINATION.md every 3 minutes for findings that require your attention. Resume work on any items the Adversary flags as needing fixes. Do not close your session until The Adversary posts a PASS verdict.`;
+}
+
 export function generateWorkerPrompt(workerNumber: number, totalWorkers: number, issueNumber: string, archetype?: Archetype): string {
   if (workerNumber === 1) {
     return `You are Worker 1 (Coordinator) of ${totalWorkers} Claude workers on issue #${issueNumber}. Read CLAUDE.md, create task breakdown in WORKTREE_COORDINATION.md, and begin implementation. Other workers are waiting for your task assignments.`;
