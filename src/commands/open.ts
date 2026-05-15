@@ -7,7 +7,7 @@ import { GitOperations } from '../lib/git.js';
 import { getTicketOperations } from '../lib/ticketing.js';
 import { TmuxOperations, ClaudeInstanceConfig } from '../lib/tmux.js';
 import { ConfigManager } from '../lib/config.js';
-import { generateClaudeMd, ensureGitignore } from '../templates/claude.md.js';
+import { generateWorktreeTicket, ensureGitignore } from '../templates/claude.md.js';
 import { generateCoordinationMd, generateWorkerPrompt } from '../templates/coordination.md.js';
 import { generateOverseerMd, generateOverseerPrompt } from '../templates/overseer.md.js';
 import { ARCHETYPES, Archetype, getArchetypeById, getDefaultArchetypeForWorker } from '../lib/archetypes.js';
@@ -171,8 +171,8 @@ export async function openCommand(issueNumber: string, description?: string, opt
       process.exit(1);
     }
     
-    // Generate CLAUDE.md
-    const claudeContent = generateClaudeMd({
+    // Generate WORKTREE_TICKET.md
+    const ticketContent = generateWorktreeTicket({
       issueNumber,
       branchName: git.createBranchName(issueNumber, description),
       issue: issue || undefined,
@@ -181,10 +181,10 @@ export async function openCommand(issueNumber: string, description?: string, opt
       customContext: config.getClaudeContext(),
       commands: config.getCommands()
     });
-    
-    const claudePath = path.join(worktreePath, 'CLAUDE.md');
-    writeFileSync(claudePath, claudeContent);
-    console.log(chalk.green('✓ Created CLAUDE.md with issue context'));
+
+    const ticketPath = path.join(worktreePath, 'WORKTREE_TICKET.md');
+    writeFileSync(ticketPath, ticketContent);
+    console.log(chalk.green('✓ Created WORKTREE_TICKET.md with issue context'));
     
     // Store coordination path for later use
     const coordinationPath = path.join(worktreePath, 'WORKTREE_COORDINATION.md');
@@ -202,7 +202,7 @@ export async function openCommand(issueNumber: string, description?: string, opt
       console.log(chalk.green('✓ Created OVERSEER.md for progress monitoring'));
     }
     
-    // Ensure CLAUDE.md, WORKTREE_COORDINATION.md, and OVERSEER.md are in .gitignore
+    // Ensure WORKTREE_TICKET.md, WORKTREE_WORKERS.json, WORKTREE_COORDINATION.md, and OVERSEER.md are in .gitignore
     ensureGitignore(worktreePath);
     console.log(chalk.green('✓ Added context files to .gitignore'));
     
@@ -224,10 +224,10 @@ export async function openCommand(issueNumber: string, description?: string, opt
     // Launch Claude workers
     if (workerCount === 1) {
       console.log(chalk.blue('\nOpening Claude Code...'));
-      const singleWorkerPrompt = `Solve the issue described in CLAUDE.md`;
+      const singleWorkerPrompt = `Solve the issue described in WORKTREE_TICKET.md`;
       console.log(chalk.gray('\nPrompt:'));
       console.log(chalk.gray(singleWorkerPrompt));
-      const paneId = tmux.launchClaude(windowName, worktreePath, issueNumber);
+      const paneId = tmux.launchClaudeWithPrompt(windowName, worktreePath, singleWorkerPrompt, { instanceName: 'Coordinator', color: 'colour39' });
       addWorker(worktreePath, issueNumber, 1, paneId, 'coordinator');
     } else {
       console.log(chalk.blue(`\nOpening ${workerCount} Claude workers...`));

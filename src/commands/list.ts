@@ -31,7 +31,7 @@ export async function listCommand(): Promise<void> {
       const window = hasWindow ? tmuxWindows.find(w => w.name === windowName) : null;
 
       let lastModified = 'Unknown';
-      const claudePath = path.join(worktree.path, 'CLAUDE.md');
+      const claudePath = path.join(worktree.path, 'WORKTREE_TICKET.md');
       if (existsSync(claudePath)) {
         const stats = statSync(claudePath);
         const now = new Date();

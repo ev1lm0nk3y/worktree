@@ -174,7 +174,7 @@ export class TmuxOperations {
 
     console.log(chalk.gray('Waiting for Claude to initialize...'));
     setTimeout(() => {
-      this.sendKeys(firstPaneId, 'Solve the issue described in CLAUDE.md');
+      this.sendKeys(firstPaneId, 'Solve the issue described in WORKTREE_TICKET.md');
       setTimeout(() => {
         this.sendEnter(firstPaneId);
         console.log(chalk.green('✓ Sent solve command to Claude'));
@@ -218,7 +218,7 @@ export class TmuxOperations {
 
     console.log(chalk.gray('Waiting for Claude to initialize...'));
     setTimeout(() => {
-      this.sendKeys(paneId, 'Solve the issue described in CLAUDE.md');
+      this.sendKeys(paneId, 'Solve the issue described in WORKTREE_TICKET.md');
       setTimeout(() => {
         this.sendEnter(paneId);
         console.log(chalk.green('✓ Sent solve command to Claude'));

@@ -17,7 +17,7 @@ export interface ClaudeContext {
   };
 }
 
-export function generateClaudeMd(context: ClaudeContext): string {
+export function generateWorktreeTicket(context: ClaudeContext): string {
   const { issueNumber, branchName, issue, provider, projectName, customContext, commands } = context;
   const providerLabel = provider === 'linear' ? 'Linear' : 'GitHub';
   const ticketRef = provider === 'linear' ? issueNumber : `#${issueNumber}`;
@@ -115,7 +115,7 @@ git rebase origin/main
 - Remember to run package installation if needed (npm install, yarn, etc.)
 - Check the development server to test changes
 - Run linting and type checking before committing
-- This file (CLAUDE.md) is ignored by git and contains context for Claude Code
+- This file (WORKTREE_TICKET.md) is ignored by git and contains ticket context for Claude Code
 `;
 
   return content;
@@ -132,15 +132,15 @@ export function ensureGitignore(worktreePath: string): void {
   
   let updated = false;
   
-  // Check if CLAUDE.md is already in .gitignore
-  if (!gitignoreContent.includes('CLAUDE.md')) {
+  // Check if WORKTREE_TICKET.md is already in .gitignore
+  if (!gitignoreContent.includes('WORKTREE_TICKET.md')) {
     if (gitignoreContent && !gitignoreContent.endsWith('\n')) {
       gitignoreContent += '\n';
     }
-    
+
     gitignoreContent += `
 # claude code worktree context
-CLAUDE.md
+WORKTREE_TICKET.md
 `;
     updated = true;
   }
@@ -171,15 +171,15 @@ CLAUDE.md
     updated = true;
   }
 
-  // Check if .worktree-workers.json is already in .gitignore
-  if (!gitignoreContent.includes('.worktree-workers.json')) {
+  // Check if WORKTREE_WORKERS.json is already in .gitignore
+  if (!gitignoreContent.includes('WORKTREE_WORKERS.json')) {
     if (!updated && gitignoreContent && !gitignoreContent.endsWith('\n')) {
       gitignoreContent += '\n';
     }
     if (!updated) {
       gitignoreContent += '\n# claude code worktree context\n';
     }
-    gitignoreContent += '.worktree-workers.json\n';
+    gitignoreContent += 'WORKTREE_WORKERS.json\n';
   }
 
   fs.writeFileSync(gitignorePath, gitignoreContent);

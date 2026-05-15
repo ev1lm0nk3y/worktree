@@ -26,12 +26,13 @@ ${issueBody}
 ## Worker Assignments
 
 ### Worker 1 (Coordinator)
-- **Role:** Lead coordinator and initial implementation
+- **Role:** Lead coordinator — does not write feature code
 - **Responsibilities:**
-  - Create initial project structure
-  - Define interfaces and contracts
-  - Implement core functionality
-  - Update this coordination document with task breakdown
+  - Read WORKTREE_WORKERS.json to identify all deployed workers before doing anything else
+  - Break the issue down into tasks and assign them to deployed workers via this document
+  - Monitor progress and unblock workers
+  - Update this coordination document as tasks are claimed and completed
+  - Do not spawn additional agents; all workers are already deployed
 
 ### Worker 2${workerArchetypes?.[2] ? ` (${workerArchetypes[2].emoji} ${workerArchetypes[2].name})` : ''}
 - **Role:** ${workerArchetypes?.[2] ? workerArchetypes[2].shortDescription : 'Supporting implementation and testing'}
@@ -148,10 +149,10 @@ export function generateAdversaryBroadcast(issueNumber: string): string {
 
 export function generateWorkerPrompt(workerNumber: number, totalWorkers: number, issueNumber: string, archetype?: Archetype): string {
   if (workerNumber === 1) {
-    return `You are Worker 1 (Coordinator) of ${totalWorkers} Claude workers on issue #${issueNumber}. Read CLAUDE.md, create task breakdown in WORKTREE_COORDINATION.md, and begin implementation. Other workers are waiting for your task assignments.`;
+    return `You are Worker 1 (Coordinator) of ${totalWorkers} Claude workers on issue #${issueNumber}. FIRST: read WORKTREE_WORKERS.json — it lists every deployed worker, their archetype, and their pane ID. Your job is to coordinate the deployed workers, not to implement anything yourself. Read WORKTREE_TICKET.md and WORKTREE_COORDINATION.md to understand the task, then break the work down and assign tasks to the workers listed in WORKTREE_WORKERS.json. Do not spawn additional agents. Do not write feature code. When all workers have finished, check WORKTREE_WORKERS.json again every 3 minutes to see if new workers have joined and assign them work.`;
   } else if (archetype) {
-    return `You are Worker ${workerNumber} (${archetype.name}) of ${totalWorkers} Claude workers on issue #${issueNumber}. ${archetype.prompt} First, check if WORKTREE_COORDINATION.md exists - if not, wait and check again every 20 seconds until it's created by Worker 1. Once available, read it along with CLAUDE.md to understand your tasks and approach them from your unique perspective.`;
+    return `You are Worker ${workerNumber} (${archetype.name}) of ${totalWorkers} Claude workers on issue #${issueNumber}. ${archetype.prompt} First, check if WORKTREE_COORDINATION.md exists - if not, wait and check again every 20 seconds until it's created by Worker 1. Once available, read it along with WORKTREE_TICKET.md to understand your tasks and approach them from your unique perspective.`;
   } else {
-    return `You are Worker ${workerNumber} of ${totalWorkers} Claude workers on issue #${issueNumber}. First, check if WORKTREE_COORDINATION.md exists - if not, wait and check again every 20 seconds until it's created by Worker 1. Once available, read it along with CLAUDE.md to understand your tasks.`;
+    return `You are Worker ${workerNumber} of ${totalWorkers} Claude workers on issue #${issueNumber}. First, check if WORKTREE_COORDINATION.md exists - if not, wait and check again every 20 seconds until it's created by Worker 1. Once available, read it along with WORKTREE_TICKET.md to understand your tasks.`;
   }
 }

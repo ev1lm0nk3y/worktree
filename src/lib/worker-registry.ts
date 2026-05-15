@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 
-export const REGISTRY_FILENAME = '.worktree-workers.json';
+export const REGISTRY_FILENAME = 'WORKTREE_WORKERS.json';
 
 export interface WorkerEntry {
   paneId: string;
