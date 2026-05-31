@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { TicketIssue, TicketProvider } from '../lib/ticketing.js';
+import { TicketIssue, TicketProvider } from '../core/ticketing.js';
 
 export interface ClaudeContext {
   issueNumber: string;

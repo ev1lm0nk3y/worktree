@@ -107,12 +107,19 @@ export class GitOperations {
       return worktreePath;
     }
 
+    // Check if the branch already exists locally
+    let branchExists = false;
     try {
-      // Try to create with new branch
-      this.exec(`git worktree add "${worktreePath}" -b "${branchName}"`);
-    } catch (error) {
-      // If branch exists, just check it out
+      this.exec(`git show-ref --verify --quiet refs/heads/${branchName}`);
+      branchExists = true;
+    } catch {
+      branchExists = false;
+    }
+
+    if (branchExists) {
       this.exec(`git worktree add "${worktreePath}" "${branchName}"`);
+    } else {
+      this.exec(`git worktree add "${worktreePath}" -b "${branchName}"`);
     }
 
     return worktreePath;

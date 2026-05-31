@@ -3,9 +3,9 @@ import * as readline from 'readline';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, chmodSync } from 'fs';
 import path from 'path';
 import os from 'os';
-import { GitOperations } from '../lib/git.js';
-import { ConfigManager } from '../lib/config.js';
-import { TicketProvider } from '../lib/ticketing.js';
+import { GitOperations } from '../core/git.js';
+import { ConfigManager } from '../core/config.js';
+import { TicketProvider } from '../core/ticketing.js';
 
 async function promptTicketingProvider(): Promise<TicketProvider> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

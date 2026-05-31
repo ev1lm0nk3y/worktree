@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import ora from 'ora';
-import { GitOperations } from '../lib/git.js';
-import { TmuxOperations } from '../lib/tmux.js';
-import { ConfigManager } from '../lib/config.js';
+import { GitOperations } from '../core/git.js';
+import { getTerminalManager } from '../core/terminal-factory.js';
+import { ConfigManager } from '../core/config.js';
 
 export async function removeCommand(issueNumber: string): Promise<void> {
   const spinner = ora();
@@ -10,7 +10,7 @@ export async function removeCommand(issueNumber: string): Promise<void> {
   try {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
-    const tmux = new TmuxOperations(config.getSessionName());
+    const tmux = getTerminalManager(config.getSessionName());
     
     // Find worktree for this issue
     const worktrees = git.listWorktrees();
@@ -45,7 +45,7 @@ export async function removeCommand(issueNumber: string): Promise<void> {
     const remainingWindows = tmux.listWindows();
     if (remainingWindows.length === 0 && tmux.hasSession()) {
       console.log(chalk.gray('\nNo more windows in session. Session will close automatically.'));
-      tmux.cleanupMarkerFile();
+      if (tmux.cleanup) tmux.cleanup();
     }
     
   } catch (error: any) {

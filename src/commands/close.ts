@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import ora from 'ora';
-import { GitOperations } from '../lib/git.js';
-import { TmuxOperations } from '../lib/tmux.js';
-import { ConfigManager } from '../lib/config.js';
+import { GitOperations } from '../core/git.js';
+import { ConfigManager } from '../core/config.js';
+import { getTerminalManager } from '../core/terminal-factory.js';
 
 export async function closeCommand(issueNumber: string): Promise<void> {
   const spinner = ora();
@@ -10,18 +10,18 @@ export async function closeCommand(issueNumber: string): Promise<void> {
   try {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
-    const tmux = new TmuxOperations(config.getSessionName());
+    const tmux = getTerminalManager(config.getSessionName());
 
     const windowName = `issue-${issueNumber}`;
 
     if (!tmux.hasWindow(windowName)) {
-      console.log(chalk.yellow(`No tmux window '${windowName}' found in session '${config.getSessionName()}'`));
+      console.log(chalk.yellow(`No window '${windowName}' found`));
       process.exit(0);
     }
 
-    spinner.start(`Closing tmux window '${windowName}'...`);
+    spinner.start(`Closing window '${windowName}'...`);
     tmux.closeWindow(windowName);
-    spinner.succeed(`Closed tmux window '${windowName}'`);
+    spinner.succeed(`Closed window '${windowName}'`);
 
     const worktrees = git.listWorktrees();
     const worktree = worktrees.find(wt =>
@@ -36,10 +36,10 @@ export async function closeCommand(issueNumber: string): Promise<void> {
 
     const remainingWindows = tmux.listWindows();
     if (remainingWindows.length === 0 && tmux.hasSession()) {
-      tmux.cleanupMarkerFile();
+      if (tmux.cleanup) tmux.cleanup();
     }
 
-    console.log(chalk.green(`\n✓ Closed tmux session for issue #${issueNumber}`));
+    console.log(chalk.green(`\n✓ Closed session for issue #${issueNumber}`));
 
   } catch (error: any) {
     spinner.fail();

@@ -1,4 +1,4 @@
-import { ARCHETYPES } from '../lib/archetypes.js';
+import { ARCHETYPES } from '../core/archetypes.js';
 
 const ARCHETYPE_IDS = ARCHETYPES.map(a => a.id).join(' ');
 
