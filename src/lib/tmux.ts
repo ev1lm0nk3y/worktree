@@ -1,20 +1,8 @@
 import { execSync } from 'child_process';
 import { existsSync, writeFileSync, unlinkSync } from 'fs';
-import chalk from 'chalk';
+import { ITerminalManager, ClaudeInstanceConfig, TerminalWindow } from '../core/interfaces.js';
 
-export interface ClaudeInstanceConfig {
-  instanceName?: string;  // passed as --name to claude CLI
-  color?: string;         // tmux colour for pane title and border styling
-}
-
-export interface TmuxWindow {
-  index: number;
-  name: string;
-  active: boolean;
-  panes: number;
-}
-
-export class TmuxOperations {
+export class TmuxOperations implements ITerminalManager {
   private sessionName: string;
   private markerFile: string;
 
@@ -51,7 +39,7 @@ export class TmuxOperations {
     return windows.some(w => w.name === windowName);
   }
 
-  listWindows(): TmuxWindow[] {
+  listWindows(): TerminalWindow[] {
     if (!this.hasSession()) return [];
 
     try {
@@ -75,7 +63,7 @@ export class TmuxOperations {
     }
   }
 
-  createWindow(windowName: string, workingDirectory: string): { windowIndex: number; firstPaneId: string } {
+  async createWindow(windowName: string, workingDirectory: string, config?: ClaudeInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }> {
     let firstPaneId: string;
     
     if (!this.hasSession()) {
@@ -98,6 +86,10 @@ export class TmuxOperations {
       firstPaneId = output.trim();
     }
 
+    if (config) {
+      this.applyPaneIdentity(firstPaneId, config);
+    }
+
     // Get window index
     const windows = this.listWindows();
     const window = windows.find(w => w.name === windowName);
@@ -118,17 +110,21 @@ export class TmuxOperations {
     }
   }
 
-  splitPane(windowName: string, workingDirectory: string, vertical: boolean = false): string {
+  async splitPane(windowName: string, workingDirectory: string, direction: 'horizontal' | 'vertical', config?: ClaudeInstanceConfig): Promise<string> {
     if (!this.hasWindow(windowName)) {
       throw new Error(`Window '${windowName}' not found`);
     }
 
-    const splitFlag = vertical ? '-v' : '-h';
+    const splitFlag = direction === 'vertical' ? '-v' : '-h';
     const output = this.exec(
       `tmux split-window ${splitFlag} -t "${this.sessionName}:${windowName}" -c "${workingDirectory}" -P -F "#{pane_id}"`
     );
     
-    return output.trim();
+    const paneId = output.trim();
+    if (config) {
+      this.applyPaneIdentity(paneId, config);
+    }
+    return paneId;
   }
 
   closeWindow(windowName: string): void {
@@ -137,21 +133,16 @@ export class TmuxOperations {
     this.exec(`tmux kill-window -t "${this.sessionName}:${windowName}"`);
   }
 
+  runCommand(targetId: string, command: string): void {
+    this.exec(`tmux send-keys -t "${targetId}" "${command}" Enter`);
+  }
+
   sendKeys(target: string, keys: string): void {
     this.exec(`tmux send-keys -t "${target}" "${keys}"`);
   }
 
   sendEnter(target: string): void {
     this.exec(`tmux send-keys -t "${target}" Enter`);
-  }
-
-  private buildClaudeCommand(instanceName?: string): string {
-    if (instanceName) {
-      // Use single quotes around the name so inner spaces survive tmux send-keys double-quoting
-      const escaped = instanceName.replace(/'/g, "'\\''");
-      return `claude --name '${escaped}'`;
-    }
-    return 'claude';
   }
 
   private applyPaneIdentity(paneId: string, config?: ClaudeInstanceConfig): void {
@@ -163,96 +154,6 @@ export class TmuxOperations {
     if (config.color) {
       this.execSilent(`tmux select-pane -t "${paneId}" -P 'fg=${config.color},bg=default'`);
     }
-  }
-
-  launchClaude(windowName: string, workingDirectory: string, _issueNumber: string, config?: ClaudeInstanceConfig): string {
-    const { firstPaneId } = this.createWindow(windowName, workingDirectory);
-    this.applyPaneIdentity(firstPaneId, config);
-
-    this.sendKeys(firstPaneId, this.buildClaudeCommand(config?.instanceName));
-    this.sendEnter(firstPaneId);
-
-    console.log(chalk.gray('Waiting for Claude to initialize...'));
-    setTimeout(() => {
-      this.sendKeys(firstPaneId, 'Solve the issue described in WORKTREE_TICKET.md');
-      setTimeout(() => {
-        this.sendEnter(firstPaneId);
-        console.log(chalk.green('✓ Sent solve command to Claude'));
-      }, 1000);
-    }, 5000);
-
-    return firstPaneId;
-  }
-
-  launchClaudeWithPrompt(windowName: string, workingDirectory: string, prompt: string, config?: ClaudeInstanceConfig): string {
-    const { firstPaneId } = this.createWindow(windowName, workingDirectory);
-    this.applyPaneIdentity(firstPaneId, config);
-
-    this.sendKeys(firstPaneId, this.buildClaudeCommand(config?.instanceName));
-    this.sendEnter(firstPaneId);
-
-    console.log(chalk.gray('Waiting for Claude to initialize...'));
-    setTimeout(() => {
-      this.sendKeys(firstPaneId, prompt);
-      setTimeout(() => {
-        this.sendEnter(firstPaneId);
-        console.log(chalk.green('✓ Sent prompt to Claude (Worker 1)'));
-      }, 1000);
-    }, 5000);
-
-    return firstPaneId;
-  }
-
-  launchClaudeInPane(
-    windowName: string,
-    workingDirectory: string,
-    _issueNumber: string,
-    vertical: boolean = false,
-    config?: ClaudeInstanceConfig
-  ): string {
-    const paneId = this.splitPane(windowName, workingDirectory, vertical);
-    this.applyPaneIdentity(paneId, config);
-
-    this.sendKeys(paneId, this.buildClaudeCommand(config?.instanceName));
-    this.sendEnter(paneId);
-
-    console.log(chalk.gray('Waiting for Claude to initialize...'));
-    setTimeout(() => {
-      this.sendKeys(paneId, 'Solve the issue described in WORKTREE_TICKET.md');
-      setTimeout(() => {
-        this.sendEnter(paneId);
-        console.log(chalk.green('✓ Sent solve command to Claude'));
-      }, 1000);
-    }, 5000);
-
-    return paneId;
-  }
-
-  launchClaudeInPaneWithPrompt(
-    windowName: string,
-    workingDirectory: string,
-    prompt: string,
-    vertical: boolean = false,
-    workerNumber?: number,
-    config?: ClaudeInstanceConfig
-  ): string {
-    const paneId = this.splitPane(windowName, workingDirectory, vertical);
-    this.applyPaneIdentity(paneId, config);
-
-    this.sendKeys(paneId, this.buildClaudeCommand(config?.instanceName));
-    this.sendEnter(paneId);
-
-    console.log(chalk.gray('Waiting for Claude to initialize...'));
-    setTimeout(() => {
-      this.sendKeys(paneId, prompt);
-      setTimeout(() => {
-        this.sendEnter(paneId);
-        const workerInfo = workerNumber === 0 ? ' (Overseer)' : workerNumber ? ` (Worker ${workerNumber})` : '';
-        console.log(chalk.green(`✓ Sent prompt to Claude${workerInfo}`));
-      }, 1000);
-    }, 5000);
-
-    return paneId;
   }
 
   selectLayout(windowName: string, layout: string): void {
@@ -281,11 +182,10 @@ export class TmuxOperations {
   }
 
   broadcastToPane(paneId: string, message: string): void {
-    this.sendKeys(paneId, message);
-    this.sendEnter(paneId);
+    this.runCommand(paneId, message);
   }
 
-  openITerm(windowIndex: number, mode: 'window' | 'tab' | 'current' = 'window', focus: boolean = true): void {
+  openEditor(windowIndex: number, mode: 'window' | 'tab' | 'current' = 'window', focus: boolean = true): void {
     const isNewSession = !existsSync(this.markerFile);
     const activate = focus ? 'activate' : '';
     const attachCmd = `tmux attach -t ${this.sessionName}`;
@@ -331,7 +231,7 @@ export class TmuxOperations {
     }
   }
 
-  cleanupMarkerFile(): void {
+  cleanup(): void {
     if (existsSync(this.markerFile)) {
       unlinkSync(this.markerFile);
     }

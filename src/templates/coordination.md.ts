@@ -1,4 +1,4 @@
-import { Archetype } from '../lib/archetypes.js';
+import { Archetype } from '../core/archetypes.js';
 
 export interface CoordinationContext {
   issueNumber: string;
@@ -15,7 +15,7 @@ export function generateCoordinationMd(context: CoordinationContext): string {
   return `# Worktree Coordination - Issue #${issueNumber}
 
 ## Overview
-This document coordinates ${workerCount} Claude workers collaborating on issue #${issueNumber}.
+This document serves as the **Team Roster** and high-level status summary for issue #${issueNumber}.
 Created: ${timestamp}
 
 ## Issue Details
@@ -23,105 +23,65 @@ Created: ${timestamp}
 **Description:**
 ${issueBody}
 
-## Worker Assignments
+## Worker Roster
 
 ### Worker 1 (Coordinator)
 - **Role:** Lead coordinator — does not write feature code
 - **Responsibilities:**
-  - Read WORKTREE_WORKERS.json to identify all deployed workers before doing anything else
-  - Break the issue down into tasks and assign them to deployed workers via this document
-  - Monitor progress and unblock workers
-  - Update this coordination document as tasks are claimed and completed
-  - Do not spawn additional agents; all workers are already deployed
+  - Read WORKTREE_WORKERS.json to identify all deployed workers
+  - Break the issue down into tasks
+  - **Delegation:** Assign tasks by creating and writing to \`WORKTREE_WORKER_[X].md\` for each worker
+  - Update this coordination document (\`WORKTREE_COORDINATION.md\`) as a high-level roster and status summary
+  - Monitor progress and unblock workers via their individual worker files
 
 ### Worker 2${workerArchetypes?.[2] ? ` (${workerArchetypes[2].emoji} ${workerArchetypes[2].name})` : ''}
 - **Role:** ${workerArchetypes?.[2] ? workerArchetypes[2].shortDescription : 'Supporting implementation and testing'}
-- **Focus:** ${workerArchetypes?.[2] ? workerArchetypes[2].focus : 'Secondary features and testing'}
 - **Responsibilities:**
-  - ${workerArchetypes?.[2] ? workerArchetypes[2].traits.slice(0, 4).join('\n  - ') : 'Implement secondary features\n  - Write tests\n  - Handle edge cases\n  - Review Worker 1\'s implementation'}
+  - Wait for \`WORKTREE_WORKER_2.md\` to be created by the Coordinator
+  - Follow instructions provided in \`WORKTREE_WORKER_2.md\`
+  - Report progress and completion within \`WORKTREE_WORKER_2.md\`
 
 ${workerCount > 2 ? `### Worker 3${workerArchetypes?.[3] ? ` (${workerArchetypes[3].emoji} ${workerArchetypes[3].name})` : ''}
 - **Role:** ${workerArchetypes?.[3] ? workerArchetypes[3].shortDescription : 'Quality assurance and optimization'}
-- **Focus:** ${workerArchetypes?.[3] ? workerArchetypes[3].focus : 'Code review and optimization'}
 - **Responsibilities:**
-  - ${workerArchetypes?.[3] ? workerArchetypes[3].traits.slice(0, 4).join('\n  - ') : 'Code review\n  - Performance optimization\n  - Documentation\n  - Integration testing'}
+  - Wait for \`WORKTREE_WORKER_3.md\` to be created by the Coordinator
+  - Follow instructions provided in \`WORKTREE_WORKER_3.md\`
 ` : ''}
 
 ${workerCount > 3 ? `### Worker 4${workerArchetypes?.[4] ? ` (${workerArchetypes[4].emoji} ${workerArchetypes[4].name})` : ''}
 - **Role:** ${workerArchetypes?.[4] ? workerArchetypes[4].shortDescription : 'Additional support and testing'}
-- **Focus:** ${workerArchetypes?.[4] ? workerArchetypes[4].focus : 'Comprehensive testing and polish'}
 - **Responsibilities:**
-  - ${workerArchetypes?.[4] ? workerArchetypes[4].traits.slice(0, 4).join('\n  - ') : 'Integration testing\n  - User experience improvements\n  - Cross-browser/platform testing\n  - Final polish and cleanup'}
+  - Wait for \`WORKTREE_WORKER_4.md\` to be created by the Coordinator
+  - Follow instructions provided in \`WORKTREE_WORKER_4.md\`
 ` : ''}
 
 ${workerCount > 4 ? `### Worker 5${workerArchetypes?.[5] ? ` (${workerArchetypes[5].emoji} ${workerArchetypes[5].name})` : ''}
 - **Role:** ${workerArchetypes?.[5] ? workerArchetypes[5].shortDescription : 'Innovation and exploration'}
-- **Focus:** ${workerArchetypes?.[5] ? workerArchetypes[5].focus : 'Alternative approaches and future improvements'}
 - **Responsibilities:**
-  - ${workerArchetypes?.[5] ? workerArchetypes[5].traits.slice(0, 4).join('\n  - ') : 'Research alternative solutions\n  - Propose future enhancements\n  - Explore optimization opportunities\n  - Document lessons learned'}
+  - Wait for \`WORKTREE_WORKER_5.md\` to be created by the Coordinator
+  - Follow instructions provided in \`WORKTREE_WORKER_5.md\`
 ` : ''}
 
-## Task Breakdown
-*To be filled by Worker 1 after initial analysis*
-
-### High Priority Tasks
-1. [ ] TBD by Worker 1
-2. [ ] TBD by Worker 1
-3. [ ] TBD by Worker 1
-
-### Medium Priority Tasks
-1. [ ] TBD by Worker 1
-2. [ ] TBD by Worker 1
-
-### Low Priority Tasks
-1. [ ] TBD by Worker 1
+## Team Status
+- Worker 1: [Starting analysis...]
+- Worker 2: [Waiting for WORKTREE_WORKER_2.md...]
+${workerCount > 2 ? '- Worker 3: [Waiting for WORKTREE_WORKER_3.md...]' : ''}
+${workerCount > 3 ? '- Worker 4: [Waiting for WORKTREE_WORKER_4.md...]' : ''}
+${workerCount > 4 ? '- Worker 5: [Waiting for WORKTREE_WORKER_5.md...]' : ''}
 
 ## Communication Protocol
-
-1. **Before starting work:** Check this document for updates
-2. **When claiming a task:** Update the task with your worker number
-3. **When completing a task:** Mark as done and note any issues
-4. **When blocked:** Add a comment in the Blockers section
-
-## Active Tasks
-*Update this section when starting/completing tasks*
-
-- Worker 1: [Starting analysis...]
-- Worker 2: [Waiting for task assignments...]
-${workerCount > 2 ? '- Worker 3: [Waiting for task assignments...]' : ''}
-${workerCount > 3 ? '- Worker 4: [Waiting for task assignments...]' : ''}
-${workerCount > 4 ? '- Worker 5: [Waiting for task assignments...]' : ''}
-
-## Completed Tasks
-*Move tasks here when complete*
-
-## Blockers & Issues
-*Document any blocking issues here*
+1. **Delegation:** All task assignments must come from Worker 1 via \`WORKTREE_WORKER_X.md\`.
+2. **Reporting:** Report progress and blockers within your individual \`WORKTREE_WORKER_X.md\`.
+3. **Collaboration:** Use this document (\`WORKTREE_COORDINATION.md\`) to track overall team status and discovered implementation notes.
 
 ## Implementation Notes
-*Share important discoveries or decisions*
+*Shared discoveries or major architectural decisions*
 
-## Files Modified
-*Track which files each worker is modifying to avoid conflicts*
-
-### Worker 1 Files:
-- 
-
-### Worker 2 Files:
-- 
-
-${workerCount > 2 ? `### Worker 3 Files:
-- 
-` : ''}
-${workerCount > 3 ? `### Worker 4 Files:
-- 
-` : ''}
-${workerCount > 4 ? `### Worker 5 Files:
-- 
-` : ''}
+## Blockers & Cross-Team Issues
+*Document any issues that require coordination between multiple workers*
 
 ---
-Remember: Coordinate through this document to avoid conflicts and ensure efficient collaboration!
+Remember: Worker 1 orchestrates the workflow. Follow the instructions in your specific worker file!
 `;
 }
 
@@ -149,10 +109,27 @@ export function generateAdversaryBroadcast(issueNumber: string): string {
 
 export function generateWorkerPrompt(workerNumber: number, totalWorkers: number, issueNumber: string, archetype?: Archetype): string {
   if (workerNumber === 1) {
-    return `You are Worker 1 (Coordinator) of ${totalWorkers} Claude workers on issue #${issueNumber}. FIRST: read WORKTREE_WORKERS.json — it lists every deployed worker, their archetype, and their pane ID. Your job is to coordinate the deployed workers, not to implement anything yourself. Read WORKTREE_TICKET.md and WORKTREE_COORDINATION.md to understand the task, then break the work down and assign tasks to the workers listed in WORKTREE_WORKERS.json. Do not spawn additional agents. Do not write feature code. When all workers have finished, check WORKTREE_WORKERS.json again every 3 minutes to see if new workers have joined and assign them work.`;
-  } else if (archetype) {
-    return `You are Worker ${workerNumber} (${archetype.name}) of ${totalWorkers} Claude workers on issue #${issueNumber}. ${archetype.prompt} First, check if WORKTREE_COORDINATION.md exists - if not, wait and check again every 20 seconds until it's created by Worker 1. Once available, read it along with WORKTREE_TICKET.md to understand your tasks and approach them from your unique perspective.`;
+    return `You are Worker 1 (Coordinator) of ${totalWorkers} Claude workers on issue #${issueNumber}. 
+
+FIRST: Read WORKTREE_WORKERS.json — it lists every deployed worker and their archetype.
+SECOND: Read WORKTREE_TICKET.md to understand the goal.
+THIRD: Coordinate the team by breaking down the work and DELEGATING to sub-workers.
+
+DELEGATION PROTOCOL:
+- You assign tasks by creating a file named \`WORKTREE_WORKER_[X].md\` for the corresponding worker (e.g., WORKTREE_WORKER_2.md).
+- Sub-workers are currently idling, waiting for their specific file to exist. They will not act until you create it.
+- Update WORKTREE_COORDINATION.md as a high-level roster/status summary, but use the individual WORKTREE_WORKER_X.md files for direct instructions.
+- Do not write feature code yourself. Focus entirely on orchestration.`;
   } else {
-    return `You are Worker ${workerNumber} of ${totalWorkers} Claude workers on issue #${issueNumber}. First, check if WORKTREE_COORDINATION.md exists - if not, wait and check again every 20 seconds until it's created by Worker 1. Once available, read it along with WORKTREE_TICKET.md to understand your tasks.`;
+    const roleName = archetype ? ` (${archetype.name})` : '';
+    const archetypePrompt = archetype ? ` ${archetype.prompt}` : '';
+    return `You are Worker ${workerNumber}${roleName} of ${totalWorkers} Claude workers on issue #${issueNumber}.${archetypePrompt}
+
+WAITING STATE:
+- Do NOT start working yet.
+- You must wait for Worker 1 (Coordinator) to create a file named \`WORKTREE_WORKER_${workerNumber}.md\` in the root of the worktree.
+- Check for this file's existence every 30 seconds.
+- Once \`WORKTREE_WORKER_${workerNumber}.md\` exists, read it and WORKTREE_TICKET.md to understand your specific assignments.
+- Report your progress and completions inside your \`WORKTREE_WORKER_${workerNumber}.md\` file.`;
   }
 }

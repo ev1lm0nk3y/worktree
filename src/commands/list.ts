@@ -1,6 +1,6 @@
-import { GitOperations } from '../lib/git.js';
-import { TmuxOperations } from '../lib/tmux.js';
-import { ConfigManager } from '../lib/config.js';
+import { GitOperations } from '../core/git.js';
+import { getTerminalManager } from '../core/terminal-factory.js';
+import { ConfigManager } from '../core/config.js';
 import { existsSync, statSync } from 'fs';
 import path from 'path';
 
@@ -8,7 +8,7 @@ export async function listCommand(): Promise<void> {
   try {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
-    const tmux = new TmuxOperations(config.getSessionName());
+    const tmux = getTerminalManager(config.getSessionName());
 
     const worktrees = git.listWorktrees();
     const tmuxWindows = tmux.listWindows();

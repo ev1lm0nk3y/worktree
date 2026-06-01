@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as readline from 'readline';
 import chalk from 'chalk';
-import { ArchetypePool } from './pools.js';
+import { ArchetypePool } from '../core/pools.js';
 
 export async function selectPoolInteractive(pools: ArchetypePool[]): Promise<ArchetypePool> {
   // Try fzf first
