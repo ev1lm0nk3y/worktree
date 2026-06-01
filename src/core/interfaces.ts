@@ -1,6 +1,6 @@
 import { Archetype } from './archetypes.js';
 
-export interface ClaudeInstanceConfig {
+export interface AgentInstanceConfig {
   instanceName?: string;
   color?: string;
   archetype?: Archetype;
@@ -17,8 +17,8 @@ export interface ITerminalManager {
   hasSession(): boolean;
   hasWindow(windowName: string): boolean;
   listWindows(): TerminalWindow[];
-  createWindow(windowName: string, workingDirectory: string, config?: ClaudeInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }>;
-  splitPane(windowName: string, workingDirectory: string, direction: 'horizontal' | 'vertical', config?: ClaudeInstanceConfig): Promise<string>;
+  createWindow(windowName: string, workingDirectory: string, config?: AgentInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }>;
+  splitPane(windowName: string, workingDirectory: string, direction: 'horizontal' | 'vertical', config?: AgentInstanceConfig): Promise<string>;
   runCommand(targetId: string, command: string): void;
   switchToWindow(windowName: string): void;
   selectLayout(windowName: string, layout: string): void;

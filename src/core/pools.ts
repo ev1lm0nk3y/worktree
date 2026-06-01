@@ -3,6 +3,7 @@ import { load } from 'js-yaml';
 import path from 'path';
 import os from 'os';
 import chalk from 'chalk';
+import { AiProvider } from './config.js';
 
 export interface PoolConfig {
   description: string;
@@ -28,9 +29,9 @@ export interface PoolsYaml {
 export class PoolManager {
   private pools: Map<string, ArchetypePool> = new Map();
 
-  constructor(repoRoot: string) {
+  constructor(repoRoot: string, aiProvider: AiProvider = 'claude') {
     this.loadDefaultPools();
-    this.loadUserPools(repoRoot);
+    this.loadUserPools(repoRoot, aiProvider);
   }
 
   private loadDefaultPools(): void {
@@ -64,18 +65,26 @@ export class PoolManager {
     };
   }
 
-  private loadUserPools(repoRoot: string): void {
-    // Try project-level pools first
-    const projectPoolsPath = path.join(repoRoot, '.claude', 'archetype-groups.yml');
-    if (existsSync(projectPoolsPath)) {
-      this.mergePools(projectPoolsPath);
+  private loadUserPools(repoRoot: string, aiProvider: AiProvider): void {
+    const homeDir = os.homedir();
+    
+    // Determine directory names to search (e.g. .gemini, .claude)
+    const dirs = aiProvider === 'gemini' ? ['.gemini', '.claude'] : ['.claude'];
+
+    // Search project-level pools
+    for (const dir of dirs) {
+      const projectPoolsPath = path.join(repoRoot, dir, 'archetype-groups.yml');
+      if (existsSync(projectPoolsPath)) {
+        this.mergePools(projectPoolsPath);
+      }
     }
 
-    // Then try user-level pools (override/extend)
-    const homeDir = os.homedir();
-    const userPoolsPath = path.join(homeDir, '.claude', 'archetype-groups.yml');
-    if (existsSync(userPoolsPath)) {
-      this.mergePools(userPoolsPath);
+    // Search user-level pools
+    for (const dir of dirs) {
+      const userPoolsPath = path.join(homeDir, dir, 'archetype-groups.yml');
+      if (existsSync(userPoolsPath)) {
+        this.mergePools(userPoolsPath);
+      }
     }
   }
 

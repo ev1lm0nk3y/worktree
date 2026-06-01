@@ -12,6 +12,8 @@ export interface ItermConfig {
   focus?: boolean;
 }
 
+export type AiProvider = 'claude' | 'gemini';
+
 export interface WorktreeConfig {
   name?: string;
   session?: string;
@@ -20,6 +22,8 @@ export interface WorktreeConfig {
   iterm?: ItermConfig;
   layout?: TmuxLayout;
   workers?: number;
+  ai_provider?: AiProvider;
+  agent_context?: string;
   claude_context?: string;
   commands?: {
     dev?: string;
@@ -70,8 +74,12 @@ export class ConfigManager {
     return projectName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_workers';
   }
 
-  getClaudeContext(): string | undefined {
-    return this.config.claude_context;
+  getAiProvider(): AiProvider {
+    return this.config.ai_provider || 'claude';
+  }
+
+  getAgentContext(): string | undefined {
+    return this.config.agent_context || this.config.claude_context;
   }
 
   getTicketingProvider(): TicketProvider {
@@ -184,9 +192,10 @@ export class ConfigManager {
       iterm: { open: 'window', focus: true },
       layout: 'tiled',
       workers: 1,
-      claude_context: `# ${projectName}
+      ai_provider: 'claude',
+      agent_context: `# ${projectName}
 
-Add project-specific context here that Claude should know about.
+Add project-specific context here that the AI agent (Claude or Gemini) should know about.
 For example:
 - Tech stack and frameworks
 - Key architectural decisions

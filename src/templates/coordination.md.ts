@@ -1,4 +1,5 @@
 import { Archetype } from '../core/archetypes.js';
+import { AiProvider } from '../core/config.js';
 
 export interface CoordinationContext {
   issueNumber: string;
@@ -7,6 +8,7 @@ export interface CoordinationContext {
   workerCount: number;
   timestamp: string;
   workerArchetypes?: { [key: number]: Archetype };
+  aiProvider: AiProvider;
 }
 
 export function generateCoordinationMd(context: CoordinationContext): string {
@@ -107,9 +109,11 @@ export function generateAdversaryBroadcast(issueNumber: string): string {
   return `⚔️ The Adversary has joined this session and is reviewing all code changes for issue #${issueNumber}. Commit any uncommitted work now, then check WORKTREE_COORDINATION.md every 3 minutes for findings that require your attention. Resume work on any items the Adversary flags as needing fixes. Do not close your session until The Adversary posts a PASS verdict.`;
 }
 
-export function generateWorkerPrompt(workerNumber: number, totalWorkers: number, issueNumber: string, archetype?: Archetype): string {
+export function generateWorkerPrompt(workerNumber: number, totalWorkers: number, issueNumber: string, aiProvider: AiProvider, archetype?: Archetype): string {
+  const aiProviderName = aiProvider === 'gemini' ? 'Gemini' : 'Claude';
+
   if (workerNumber === 1) {
-    return `You are Worker 1 (Coordinator) of ${totalWorkers} Claude workers on issue #${issueNumber}. 
+    return `You are Worker 1 (Coordinator) of ${totalWorkers} ${aiProviderName} workers on issue #${issueNumber}. 
 
 FIRST: Read WORKTREE_WORKERS.json — it lists every deployed worker and their archetype.
 SECOND: Read WORKTREE_TICKET.md to understand the goal.
@@ -123,7 +127,7 @@ DELEGATION PROTOCOL:
   } else {
     const roleName = archetype ? ` (${archetype.name})` : '';
     const archetypePrompt = archetype ? ` ${archetype.prompt}` : '';
-    return `You are Worker ${workerNumber}${roleName} of ${totalWorkers} Claude workers on issue #${issueNumber}.${archetypePrompt}
+    return `You are Worker ${workerNumber}${roleName} of ${totalWorkers} ${aiProviderName} workers on issue #${issueNumber}.${archetypePrompt}
 
 WAITING STATE:
 - Do NOT start working yet.

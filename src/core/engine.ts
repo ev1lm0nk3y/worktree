@@ -3,9 +3,9 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { GitOperations } from './git.js';
 import { ConfigManager } from './config.js';
-import { ILogger, ITerminalManager, ClaudeInstanceConfig } from './interfaces.js';
+import { ILogger, ITerminalManager, AgentInstanceConfig } from './interfaces.js';
 import { getTicketOperations } from './ticketing.js';
-import { generateWorktreeTicket, ensureGitignore } from '../templates/claude.md.js';
+import { generateWorktreeTicket, ensureGitignore } from '../templates/ticket.md.js';
 import { generateCoordinationMd, generateWorkerPrompt, generateNewWorkerEntry, generateAdversaryAlert, generateAdversaryBroadcast } from '../templates/coordination.md.js';
 import { generateOverseerMd, generateOverseerPrompt } from '../templates/overseer.md.js';
 import { Archetype, getArchetypeById, getDefaultArchetypeForWorker } from './archetypes.js';
@@ -99,8 +99,9 @@ export class WorktreeEngine {
       branchName: this.git.createBranchName(issueNumber, description),
       issue: issue || undefined,
       provider,
+      aiProvider: this.config.getAiProvider(),
       projectName: this.config.getProjectName(),
-      customContext: this.config.getClaudeContext(),
+      customContext: this.config.getAgentContext(),
       commands: this.config.getCommands()
     });
 
@@ -163,6 +164,9 @@ export class WorktreeEngine {
       }
     }
 
+    const aiProvider = this.config.getAiProvider();
+    const aiProviderName = aiProvider === 'gemini' ? 'Gemini' : 'Claude';
+
     if (workerCount > 1) {
       const coordinationContent = generateCoordinationMd({
         issueNumber,
@@ -170,7 +174,8 @@ export class WorktreeEngine {
         issueBody: issue.body,
         workerCount,
         timestamp: new Date().toISOString(),
-        workerArchetypes
+        workerArchetypes,
+        aiProvider
       });
       
       writeFileSync(coordinationPath, coordinationContent);
@@ -179,18 +184,18 @@ export class WorktreeEngine {
 
     // Launch Workers
     if (workerCount === 1) {
-      this.logger.info('\nOpening Claude Code...');
+      this.logger.info(`\nOpening ${aiProviderName} worker...`);
       const prompt = `Solve the issue described in WORKTREE_TICKET.md`;
       const { firstPaneId } = await this.terminal.createWindow(windowName, worktreePath, { instanceName: 'Coordinator', color: 'colour39' });
-      this.launchClaudeWithPrompt(firstPaneId, prompt);
+      this.launchAgentWithPrompt(firstPaneId, prompt);
       addWorker(worktreePath, issueNumber, 1, firstPaneId, 'coordinator');
     } else {
-      this.logger.info(`\nOpening ${workerCount} Claude workers...`);
+      this.logger.info(`\nOpening ${workerCount} ${aiProviderName} workers...`);
       
       // Launch Coordinator
-      const worker1Prompt = generateWorkerPrompt(1, workerCount, issueNumber);
+      const worker1Prompt = generateWorkerPrompt(1, workerCount, issueNumber, aiProvider);
       const { firstPaneId } = await this.terminal.createWindow(windowName, worktreePath, { instanceName: 'Coordinator', color: 'colour39' });
-      this.launchClaudeWithPrompt(firstPaneId, worker1Prompt);
+      this.launchAgentWithPrompt(firstPaneId, worker1Prompt);
       addWorker(worktreePath, issueNumber, 1, firstPaneId, 'coordinator');
 
       // Launch additional workers
@@ -198,26 +203,26 @@ export class WorktreeEngine {
         await new Promise(resolve => setTimeout(resolve, 1000));
         const direction = i % 2 === 0 ? 'vertical' : 'horizontal';
         const archetype = workerArchetypes[i];
-        const workerPrompt = generateWorkerPrompt(i, workerCount, issueNumber, archetype);
+        const workerPrompt = generateWorkerPrompt(i, workerCount, issueNumber, aiProvider, archetype);
         
-        const config: ClaudeInstanceConfig = archetype 
+        const config: AgentInstanceConfig = archetype 
           ? { instanceName: `${archetype.emoji} ${archetype.name}`, color: archetype.color, archetype }
           : {};
           
         const paneId = await this.terminal.splitPane(windowName, worktreePath, direction, config);
-        this.launchClaudeWithPrompt(paneId, workerPrompt);
+        this.launchAgentWithPrompt(paneId, workerPrompt);
         addWorker(worktreePath, issueNumber, i, paneId, archetype?.id ?? 'unknown');
       }
     }
 
     // Watcher
     if (watcher || (deployedPool?.watcher?.enable === true)) {
-      this.logger.info('\nSpawning Overseer worker...');
+      this.logger.info(`\nSpawning ${aiProviderName} Overseer...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const overseerPrompt = generateOverseerPrompt(issueNumber);
       const overseerPaneId = await this.terminal.splitPane(windowName, worktreePath, 'vertical', { instanceName: 'Overseer', color: 'colour208' });
-      this.launchClaudeWithPrompt(overseerPaneId, overseerPrompt);
+      this.launchAgentWithPrompt(overseerPaneId, overseerPrompt);
       addWorker(worktreePath, issueNumber, 0, overseerPaneId, 'overseer');
     }
 
@@ -228,8 +233,11 @@ export class WorktreeEngine {
     }
   }
 
-  private launchClaudeWithPrompt(targetId: string, prompt: string) {
-    this.terminal.runCommand(targetId, 'claude');
+  private launchAgentWithPrompt(targetId: string, prompt: string) {
+    const provider = this.config.getAiProvider();
+    const command = provider === 'gemini' ? 'gemini' : 'claude';
+    
+    this.terminal.runCommand(targetId, command);
     setTimeout(() => {
       this.terminal.runCommand(targetId, prompt);
     }, 5000);
@@ -237,6 +245,8 @@ export class WorktreeEngine {
 
   async create(topic: string): Promise<void> {
     const provider = this.config.getTicketingProvider();
+    const aiProvider = this.config.getAiProvider();
+    const aiProviderName = aiProvider === 'gemini' ? 'Gemini' : 'Claude';
     const slugifiedTopic = topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const windowName = `guide-${slugifiedTopic}`.slice(0, 32);
 
@@ -253,7 +263,7 @@ export class WorktreeEngine {
 
     const guidePrompt = this.buildGuidePrompt(guideArchetype.prompt, topic, provider);
 
-    this.logger.info('\nLaunching The Guide...');
+    this.logger.info(`\nLaunching The Guide (${aiProviderName})...`);
     
     const { firstPaneId, windowIndex } = await this.terminal.createWindow(windowName, this.git.repoRoot, { 
       instanceName: 'The Guide', 
@@ -261,7 +271,7 @@ export class WorktreeEngine {
       archetype: guideArchetype
     });
 
-    this.launchClaudeWithPrompt(firstPaneId, guidePrompt);
+    this.launchAgentWithPrompt(firstPaneId, guidePrompt);
 
     if (this.terminal.openEditor) {
       this.terminal.openEditor(windowIndex, this.config.getItermOpenMode(), this.config.getItermFocus());
@@ -273,6 +283,7 @@ export class WorktreeEngine {
 
   async split(issueNumber: string, options: { vertical?: boolean, archetype?: Archetype }): Promise<void> {
     const windowName = `issue-${issueNumber}`;
+    const aiProvider = this.config.getAiProvider();
 
     if (!this.terminal.hasWindow(windowName)) {
       throw new Error(`No terminal window '${windowName}' found.`);
@@ -301,14 +312,14 @@ export class WorktreeEngine {
       this.logger.success(`✓ Updated WORKTREE_COORDINATION.md with Worker ${workerNumber}`);
     }
 
-    const prompt = generateWorkerPrompt(workerNumber, workerNumber, issueNumber, archetype);
+    const prompt = generateWorkerPrompt(workerNumber, workerNumber, issueNumber, aiProvider, archetype);
     
-    const config: ClaudeInstanceConfig = archetype
+    const config: AgentInstanceConfig = archetype
       ? { instanceName: `${archetype.emoji} ${archetype.name}`, color: archetype.color, archetype }
       : {};
       
     const newPaneId = await this.terminal.splitPane(windowName, worktreePath, vertical ? 'vertical' : 'horizontal', config);
-    this.launchClaudeWithPrompt(newPaneId, prompt);
+    this.launchAgentWithPrompt(newPaneId, prompt);
     addWorker(worktreePath, issueNumber, workerNumber, newPaneId, archetype?.id ?? 'unknown');
 
     if (archetype?.id === 'adversary' && existingPaneIds.length > 0) {
