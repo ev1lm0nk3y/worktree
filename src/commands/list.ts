@@ -31,9 +31,9 @@ export async function listCommand(): Promise<void> {
       const window = hasWindow ? tmuxWindows.find(w => w.name === windowName) : null;
 
       let lastModified = 'Unknown';
-      const claudePath = path.join(worktree.path, 'WORKTREE_TICKET.md');
-      if (existsSync(claudePath)) {
-        const stats = statSync(claudePath);
+      const ticketPath = path.join(worktree.path, 'WORKTREE_TICKET.md');
+      if (existsSync(ticketPath)) {
+        const stats = statSync(ticketPath);
         const now = new Date();
         const diff = now.getTime() - stats.mtime.getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));

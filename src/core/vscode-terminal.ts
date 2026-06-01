@@ -1,4 +1,4 @@
-import { ITerminalManager, ClaudeInstanceConfig, TerminalWindow } from './interfaces.js';
+import { ITerminalManager, AgentInstanceConfig, TerminalWindow } from './interfaces.js';
 
 /**
  * A skeletal VSCode terminal manager implementation.
@@ -21,13 +21,13 @@ export class VSCodeTerminalManager implements ITerminalManager {
     return [];
   }
 
-  async createWindow(windowName: string, _workingDirectory: string, _config?: ClaudeInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }> {
+  async createWindow(windowName: string, _workingDirectory: string, _config?: AgentInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }> {
     console.log(`[VSCode] Creating "window" (terminal group) for: ${windowName}`);
     // In VSCode, we would use `vscode.window.createTerminal`.
     return { windowIndex: 0, firstPaneId: 'vscode-terminal-1' };
   }
 
-  async splitPane(windowName: string, _workingDirectory: string, direction: 'horizontal' | 'vertical', _config?: ClaudeInstanceConfig): Promise<string> {
+  async splitPane(windowName: string, _workingDirectory: string, direction: 'horizontal' | 'vertical', _config?: AgentInstanceConfig): Promise<string> {
     console.log(`[VSCode] Splitting terminal ${direction} for: ${windowName}`);
     // In VSCode, splitting is handled by the terminal API.
     return `vscode-terminal-split-${Date.now()}`;

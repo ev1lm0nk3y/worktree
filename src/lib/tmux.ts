@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 import { existsSync, writeFileSync, unlinkSync } from 'fs';
-import { ITerminalManager, ClaudeInstanceConfig, TerminalWindow } from '../core/interfaces.js';
+import { ITerminalManager, AgentInstanceConfig, TerminalWindow } from '../core/interfaces.js';
 
 export class TmuxOperations implements ITerminalManager {
   private sessionName: string;
@@ -63,7 +63,7 @@ export class TmuxOperations implements ITerminalManager {
     }
   }
 
-  async createWindow(windowName: string, workingDirectory: string, config?: ClaudeInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }> {
+  async createWindow(windowName: string, workingDirectory: string, config?: AgentInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }> {
     let firstPaneId: string;
     
     if (!this.hasSession()) {
@@ -110,7 +110,7 @@ export class TmuxOperations implements ITerminalManager {
     }
   }
 
-  async splitPane(windowName: string, workingDirectory: string, direction: 'horizontal' | 'vertical', config?: ClaudeInstanceConfig): Promise<string> {
+  async splitPane(windowName: string, workingDirectory: string, direction: 'horizontal' | 'vertical', config?: AgentInstanceConfig): Promise<string> {
     if (!this.hasWindow(windowName)) {
       throw new Error(`Window '${windowName}' not found`);
     }
@@ -145,7 +145,7 @@ export class TmuxOperations implements ITerminalManager {
     this.exec(`tmux send-keys -t "${target}" Enter`);
   }
 
-  private applyPaneIdentity(paneId: string, config?: ClaudeInstanceConfig): void {
+  private applyPaneIdentity(paneId: string, config?: AgentInstanceConfig): void {
     if (!config) return;
     if (config.instanceName) {
       const title = config.instanceName.replace(/'/g, "'\\''");

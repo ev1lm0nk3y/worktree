@@ -1,11 +1,13 @@
 import * as fs from 'fs';
 import { TicketIssue, TicketProvider } from '../core/ticketing.js';
+import { AiProvider } from '../core/config.js';
 
-export interface ClaudeContext {
+export interface AgentContext {
   issueNumber: string;
   branchName: string;
   issue?: TicketIssue;
   provider: TicketProvider;
+  aiProvider: AiProvider;
   projectName: string;
   customContext?: string;
   commands?: {
@@ -17,15 +19,16 @@ export interface ClaudeContext {
   };
 }
 
-export function generateWorktreeTicket(context: ClaudeContext): string {
-  const { issueNumber, branchName, issue, provider, projectName, customContext, commands } = context;
+export function generateWorktreeTicket(context: AgentContext): string {
+  const { issueNumber, branchName, issue, provider, aiProvider, projectName, customContext, commands } = context;
   const providerLabel = provider === 'linear' ? 'Linear' : 'GitHub';
   const ticketRef = provider === 'linear' ? issueNumber : `#${issueNumber}`;
+  const aiProviderName = aiProvider === 'gemini' ? 'Gemini' : 'Claude';
 
   let content = `# ${projectName} - Issue ${ticketRef}
 
 ## Context
-This is a worktree for working on ${providerLabel} issue ${ticketRef}.
+This is a worktree for working on ${providerLabel} issue ${ticketRef} using ${aiProviderName}.
 Branch: ${branchName}
 Created: ${new Date().toISOString()}
 
@@ -115,7 +118,7 @@ git rebase origin/main
 - Remember to run package installation if needed (npm install, yarn, etc.)
 - Check the development server to test changes
 - Run linting and type checking before committing
-- This file (WORKTREE_TICKET.md) is ignored by git and contains ticket context for Claude Code
+- This file (WORKTREE_TICKET.md) is ignored by git and contains ticket context for the AI agent
 `;
 
   return content;
@@ -131,6 +134,7 @@ export function ensureGitignore(worktreePath: string): void {
   }
   
   let updated = false;
+  const header = '\n# agent worktree context\n';
   
   // Check if WORKTREE_TICKET.md is already in .gitignore
   if (!gitignoreContent.includes('WORKTREE_TICKET.md')) {
@@ -138,21 +142,18 @@ export function ensureGitignore(worktreePath: string): void {
       gitignoreContent += '\n';
     }
 
-    gitignoreContent += `
-# claude code worktree context
-WORKTREE_TICKET.md
-`;
+    gitignoreContent += header + 'WORKTREE_TICKET.md\n';
     updated = true;
   }
   
   // Check if WORKTREE_COORDINATION.md is already in .gitignore
   if (!gitignoreContent.includes('WORKTREE_COORDINATION.md')) {
-    if (!updated && gitignoreContent && !gitignoreContent.endsWith('\n')) {
+    if (gitignoreContent && !gitignoreContent.endsWith('\n')) {
       gitignoreContent += '\n';
     }
     
     if (!updated) {
-      gitignoreContent += '\n# claude code worktree context\n';
+      gitignoreContent += header;
     }
     
     gitignoreContent += 'WORKTREE_COORDINATION.md\n';
@@ -161,11 +162,11 @@ WORKTREE_TICKET.md
   
   // Check if OVERSEER.md is already in .gitignore
   if (!gitignoreContent.includes('OVERSEER.md')) {
-    if (!updated && gitignoreContent && !gitignoreContent.endsWith('\n')) {
+    if (gitignoreContent && !gitignoreContent.endsWith('\n')) {
       gitignoreContent += '\n';
     }
     if (!updated) {
-      gitignoreContent += '\n# claude code worktree context\n';
+      gitignoreContent += header;
     }
     gitignoreContent += 'OVERSEER.md\n';
     updated = true;
@@ -173,11 +174,11 @@ WORKTREE_TICKET.md
 
   // Check if WORKTREE_WORKERS.json is already in .gitignore
   if (!gitignoreContent.includes('WORKTREE_WORKERS.json')) {
-    if (!updated && gitignoreContent && !gitignoreContent.endsWith('\n')) {
+    if (gitignoreContent && !gitignoreContent.endsWith('\n')) {
       gitignoreContent += '\n';
     }
     if (!updated) {
-      gitignoreContent += '\n# claude code worktree context\n';
+      gitignoreContent += header;
     }
     gitignoreContent += 'WORKTREE_WORKERS.json\n';
   }

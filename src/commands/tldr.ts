@@ -6,24 +6,24 @@ export async function tldrCommand(): Promise<void> {
   console.log(chalk.yellow('Prerequisites:'));
   console.log('  • GitHub CLI (gh) installed and authenticated');
   console.log('  • tmux and iTerm2 (macOS)');
-  console.log('  • Claude CLI installed\n');
+  console.log('  • Claude or Gemini CLI installed\n');
 
   console.log(chalk.yellow('Common Usage:'));
-  
+
   console.log(chalk.gray('\n# First time setup in a repo'));
   console.log('  worktree init');
-  
+
   console.log(chalk.gray('\n# Start working on issue #42'));
   console.log('  worktree open 42');
-  console.log(chalk.dim('  → Creates worktree, fetches issue, launches Claude'));
-  
+  console.log(chalk.dim('  → Creates worktree, fetches issue, launches AI agent'));
+
   console.log(chalk.gray('\n# Better branch name'));
   console.log('  worktree open 42 "fix-login-bug"');
   console.log(chalk.dim('  → Branch: issue-42-fix-login-bug'));
-  
+
   console.log(chalk.gray('\n# Multiple workers for complex issue'));
   console.log('  worktree open 78 -w 3');
-  console.log(chalk.dim('  → 3 Claude instances with coordination'));
+  console.log(chalk.dim('  → 3 AI instances with coordination'));
   console.log(chalk.dim('  → Interactive wizard to assign archetypes'));
   
   console.log(chalk.gray('\n# Skip archetype wizard'));
@@ -34,7 +34,7 @@ export async function tldrCommand(): Promise<void> {
   console.log('  worktree open 78 -w 3 --watcher');
   console.log(chalk.dim('  → 3 workers + 1 overseer tracking progress'));
   
-  console.log(chalk.gray('\n# Add another Claude to existing issue'));
+  console.log(chalk.gray('\n# Add another worker to existing issue'));
   console.log('  worktree split 42');
   
   console.log(chalk.gray('\n# See all worktrees'));

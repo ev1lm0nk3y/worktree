@@ -65,7 +65,7 @@ export async function openCommand(issueNumber: string, description?: string, opt
     // Resolve pool
     let deployedPool: ArchetypePool | undefined;
     if (options?.deployPool !== undefined) {
-      const poolManager = new PoolManager(git.repoRoot);
+      const poolManager = new PoolManager(git.repoRoot, config.getAiProvider());
       const allPools = poolManager.getAllPools();
 
       if (allPools.length === 0) {

@@ -15,13 +15,13 @@ const program = new Command();
 
 program
   .name('worktree')
-  .description('CLI tool for managing Git worktrees with GitHub issues and Claude Code integration')
+  .description('CLI tool for managing Git worktrees with GitHub/Linear issues and AI agent integration')
   .version('0.5.0');
 
 program
   .command('open <issue-number> [description]')
-  .description('Create or switch to a worktree for a GitHub issue')
-  .option('-w, --workers <number>', 'Number of Claude workers to spawn (default: 1)')
+  .description('Create or switch to a worktree for an issue')
+  .option('-w, --workers <number>', 'Number of AI workers to spawn (default: 1)')
   .option('--deploy-pool [name]', 'Deploy a pre-configured worker pool (interactive selection if no name given)')
   .option('--watcher', 'Spawn an additional overseer worker to monitor progress')
   .option('--no-wizard', 'Skip archetype selection wizard and use defaults')
@@ -34,7 +34,7 @@ program
 
 program
   .command('split <issue-number>')
-  .description('Split current tmux pane with new Claude instance')
+  .description('Split current tmux pane with a new AI worker instance')
   .option('-v, --vertical', 'Split vertically instead of horizontally')
   .option('-f, --focus', 'Focus the new pane after creation')
   .option('-a, --archetype <id>', 'Assign archetype role: architect|detective|craftsman|explorer|aesthete|adversary|sentinel|scribe|guide')
