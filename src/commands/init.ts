@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, chm
 import path from 'path';
 import os from 'os';
 import { GitOperations } from '../core/git.js';
-import { ConfigManager } from '../core/config.js';
+import { ConfigManager, AiProvider } from '../core/config.js';
 import { TicketProvider } from '../core/ticketing.js';
 
 async function promptTicketingProvider(): Promise<TicketProvider> {
@@ -123,6 +123,33 @@ async function ensureLinearApiKey(): Promise<void> {
   console.log(chalk.gray(`     [ -f ${envFile} ] && source ${envFile}`));
 }
 
+async function promptAiProvider(): Promise<AiProvider> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  console.log(chalk.cyan('\nWhich AI agent do you want to use?'));
+  console.log('1) Claude Code (binary: claude)');
+  console.log('2) Gemini CLI (binary: gemini)');
+
+  return new Promise((resolve) => {
+    const ask = () => {
+      rl.question(chalk.yellow('Choice (1-2) [1]: '), (answer) => {
+        const choice = answer.trim() || '1';
+        if (choice === '1') {
+          rl.close();
+          resolve('claude');
+        } else if (choice === '2') {
+          rl.close();
+          resolve('gemini');
+        } else {
+          console.log(chalk.red('Invalid choice. Please select 1 or 2.'));
+          ask();
+        }
+      });
+    };
+    ask();
+  });
+}
+
 export async function initCommand(): Promise<void> {
   try {
     const git = new GitOperations();
@@ -130,12 +157,20 @@ export async function initCommand(): Promise<void> {
 
     if (config.exists()) {
       const current = config.hasTicketingProvider() ? config.getTicketingProvider() : 'unset';
+      const currentAi = config.getAiProvider();
       console.log(chalk.yellow('⚠️  .worktree.yml already exists'));
       console.log(chalk.gray(`   Path: ${git.repoRoot}/.worktree.yml`));
       console.log(chalk.gray(`   Current ticketing: ${current}`));
+      console.log(chalk.gray(`   Current AI:        ${currentAi}`));
+      
       const provider = await promptTicketingProvider();
+      const aiProvider = await promptAiProvider();
+      
       config.setTicketingProvider(provider);
+      config.setAiProvider(aiProvider);
+      
       console.log(chalk.green(`✓ Updated ticketing provider to ${provider}`));
+      console.log(chalk.green(`✓ Updated AI provider to ${aiProvider}`));
       if (provider === 'linear') {
         await ensureLinearApiKey();
       }
@@ -145,7 +180,9 @@ export async function initCommand(): Promise<void> {
     console.log(chalk.blue('Initializing worktree configuration...'));
 
     const provider = await promptTicketingProvider();
-    config.createDefaultConfig(provider);
+    const aiProvider = await promptAiProvider();
+    
+    config.createDefaultConfig(provider, aiProvider);
 
     if (provider === 'linear') {
       await ensureLinearApiKey();
@@ -156,6 +193,7 @@ export async function initCommand(): Promise<void> {
     console.log(chalk.gray(`  Project:   ${config.getProjectName()}`));
     console.log(chalk.gray(`  Session:   ${config.getSessionName()}`));
     console.log(chalk.gray(`  Ticketing: ${provider}`));
+    console.log(chalk.gray(`  AI Agent:  ${aiProvider}`));
 
     const commands = config.getCommands();
     if (commands && Object.keys(commands).length > 0) {

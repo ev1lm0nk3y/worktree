@@ -113,6 +113,15 @@ export class ConfigManager {
 
   setTicketingProvider(provider: TicketProvider): void {
     this.config.ticketing = provider;
+    this.saveConfig();
+  }
+
+  setAiProvider(provider: AiProvider): void {
+    this.config.ai_provider = provider;
+    this.saveConfig();
+  }
+
+  private saveConfig(): void {
     const yamlContent = dump(this.config, {
       indent: 2,
       lineWidth: -1,
@@ -181,7 +190,7 @@ export class ConfigManager {
     return commands;
   }
 
-  createDefaultConfig(provider: TicketProvider = 'github'): void {
+  createDefaultConfig(provider: TicketProvider = 'github', aiProvider: AiProvider = 'claude'): void {
     const projectName = path.basename(path.dirname(this.configPath));
     const detectedCommands = this.detectCommands();
 
@@ -192,7 +201,7 @@ export class ConfigManager {
       iterm: { open: 'window', focus: true },
       layout: 'tiled',
       workers: 1,
-      ai_provider: 'claude',
+      ai_provider: aiProvider,
       agent_context: `# ${projectName}
 
 Add project-specific context here that the AI agent (Claude or Gemini) should know about.
