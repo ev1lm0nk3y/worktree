@@ -64,10 +64,32 @@ export class ConfigManager {
     if (this.config.session) {
       return this.config.session;
     }
-    
+
     // Generate session name from project name
     const projectName = this.getProjectName();
     return projectName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_workers';
+  }
+
+  getWorktreeSessionName(issueNumber: string): string {
+    const prefix = this.getProjectName()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    return `${prefix}-issue-${issueNumber}`;
+  }
+
+  getGuideSessionName(topic: string): string {
+    const prefix = this.getProjectName()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const encoded = Buffer.from(topic)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+      .slice(0, 24);
+    return `${prefix}-guide-${encoded}`;
   }
 
   getClaudeContext(): string | undefined {
