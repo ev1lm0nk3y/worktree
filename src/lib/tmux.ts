@@ -236,4 +236,11 @@ export class TmuxOperations implements ITerminalManager {
       unlinkSync(this.markerFile);
     }
   }
+
+  killSession(): void {
+    this.execSilent(`tmux kill-session -t "${this.sessionName}"`);
+    if (existsSync(this.markerFile)) {
+      unlinkSync(this.markerFile);
+    }
+  }
 }

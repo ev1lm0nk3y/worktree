@@ -27,6 +27,7 @@ export interface ITerminalManager {
   broadcastToPane?(paneId: string, message: string): void;
   closeWindow(windowName: string): void;
   cleanup?(): void;
+  killSession?(): void;
 }
 
 export interface ILogger {
