@@ -10,18 +10,16 @@ export async function closeCommand(issueNumber: string): Promise<void> {
   try {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
-    const tmux = getTerminalManager(config.getSessionName());
+    const tmux = getTerminalManager(config.getWorktreeSessionName(issueNumber));
 
-    const windowName = `issue-${issueNumber}`;
-
-    if (!tmux.hasWindow(windowName)) {
-      console.log(chalk.yellow(`No window '${windowName}' found`));
+    if (!tmux.hasSession()) {
+      console.log(chalk.yellow(`No session found for issue #${issueNumber}`));
       process.exit(0);
     }
 
-    spinner.start(`Closing window '${windowName}'...`);
-    tmux.closeWindow(windowName);
-    spinner.succeed(`Closed window '${windowName}'`);
+    spinner.start(`Closing session for issue #${issueNumber}...`);
+    if (tmux.killSession) tmux.killSession();
+    spinner.succeed(`Closed session for issue #${issueNumber}`);
 
     const worktrees = git.listWorktrees();
     const worktree = worktrees.find(wt =>
@@ -32,11 +30,6 @@ export async function closeCommand(issueNumber: string): Promise<void> {
     if (worktree) {
       console.log(chalk.gray(`Worktree retained at: ${worktree.path}`));
       console.log(chalk.gray(`Reopen with: wt open ${issueNumber}`));
-    }
-
-    const remainingWindows = tmux.listWindows();
-    if (remainingWindows.length === 0 && tmux.hasSession()) {
-      if (tmux.cleanup) tmux.cleanup();
     }
 
     console.log(chalk.green(`\n✓ Closed session for issue #${issueNumber}`));
