@@ -8,10 +8,8 @@ export async function listCommand(): Promise<void> {
   try {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
-    const tmux = getTerminalManager(config.getSessionName());
 
     const worktrees = git.listWorktrees();
-    const tmuxWindows = tmux.listWindows();
 
     if (worktrees.length === 0) {
       console.log('No worktrees found');
@@ -20,15 +18,25 @@ export async function listCommand(): Promise<void> {
 
     console.log('\nWorktrees:\n');
 
+    let liveSessions = 0;
+    let totalWorktrees = 0;
+
     for (const worktree of worktrees) {
       if (worktree.path === git.repoRoot) continue;
+      totalWorktrees++;
 
       const issueMatch = worktree.branch.match(/issue-(\d+)/);
       const issueNumber = issueMatch ? issueMatch[1] : null;
 
-      const windowName = issueNumber ? `issue-${issueNumber}` : null;
-      const hasWindow = windowName ? tmuxWindows.some(w => w.name === windowName) : false;
-      const window = hasWindow ? tmuxWindows.find(w => w.name === windowName) : null;
+      const terminal = issueNumber
+        ? getTerminalManager(config.getWorktreeSessionName(issueNumber))
+        : null;
+      const isLive = terminal ? terminal.hasSession() : false;
+      if (isLive) liveSessions++;
+
+      const paneCount = isLive && terminal?.countPanes && issueNumber
+        ? terminal.countPanes(`issue-${issueNumber}`)
+        : 0;
 
       let lastModified = 'Unknown';
       const claudePath = path.join(worktree.path, 'WORKTREE_TICKET.md');
@@ -39,26 +47,17 @@ export async function listCommand(): Promise<void> {
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const days = Math.floor(hours / 24);
 
-        if (days > 0) {
-          lastModified = `${days}d ago`;
-        } else if (hours > 0) {
-          lastModified = `${hours}h ago`;
-        } else {
-          lastModified = 'Recently';
-        }
+        if (days > 0) lastModified = `${days}d ago`;
+        else if (hours > 0) lastModified = `${hours}h ago`;
+        else lastModified = 'Recently';
       }
 
       const status = issueNumber ? `Issue #${issueNumber}` : worktree.branch;
 
-      let tmuxStatus = 'No window';
-      if (hasWindow && window) {
-        tmuxStatus = `Window ${window.index}`;
-        if (window.active) {
-          tmuxStatus += ' (active)';
-        }
-        if (window.panes > 1) {
-          tmuxStatus += ` [${window.panes} panes]`;
-        }
+      let tmuxStatus = 'No session';
+      if (isLive) {
+        tmuxStatus = 'Session active';
+        if (paneCount > 1) tmuxStatus += ` [${paneCount} panes]`;
       }
 
       console.log(`${status} - ${path.basename(worktree.path)}`);
@@ -68,10 +67,7 @@ export async function listCommand(): Promise<void> {
       console.log('');
     }
 
-    if (tmux.hasSession()) {
-      console.log(`\nTmux session: ${config.getSessionName()}`);
-      console.log(`Active windows: ${tmuxWindows.length}`);
-    }
+    console.log(`Active sessions: ${liveSessions} / ${totalWorktrees}`);
 
   } catch (error: any) {
     console.error(`Error: ${error.message}`);
