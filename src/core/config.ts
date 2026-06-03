@@ -70,19 +70,20 @@ export class ConfigManager {
     return projectName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_workers';
   }
 
-  getWorktreeSessionName(issueNumber: string): string {
-    const prefix = this.getProjectName()
+  private getSlugPrefix(): string {
+    return this.getProjectName()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  getWorktreeSessionName(issueNumber: string): string {
+    const prefix = this.getSlugPrefix();
     return `${prefix}-issue-${issueNumber}`;
   }
 
   getGuideSessionName(topic: string): string {
-    const prefix = this.getProjectName()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+    const prefix = this.getSlugPrefix();
     const encoded = Buffer.from(topic)
       .toString('base64')
       .replace(/\+/g, '-')
