@@ -23,7 +23,7 @@ export interface OpenOptions {
 
 export class WorktreeEngine {
   constructor(
-    private terminal: ITerminalManager,
+    private terminalFactory: (sessionName: string) => ITerminalManager,
     private logger: ILogger,
     private git: GitOperations,
     private config: ConfigManager
@@ -31,6 +31,7 @@ export class WorktreeEngine {
 
   async open(options: OpenOptions): Promise<void> {
     const { issueNumber, description, watcher, archetypes, deployedPool } = options;
+    const terminal = this.terminalFactory(this.config.getWorktreeSessionName(issueNumber));
     const provider = this.config.getTicketingProvider();
     const tickets = await getTicketOperations(provider);
     const providerLabel = provider === 'linear' ? 'Linear' : 'GitHub';
@@ -59,21 +60,12 @@ export class WorktreeEngine {
       this.logger.warn(`⚠️  Worktree already exists at: ${worktreePath}`);
       
       // Check if window exists
-      if (this.terminal.hasWindow(windowName)) {
-        this.logger.warn(`⚠️  Window '${windowName}' already exists`);
-        this.logger.info('→ Switching to existing window...');
-        
-        this.terminal.switchToWindow(windowName);
-        
-        // Handling iTerm/Editor focus specifically might need more thought
-        // for now we'll assume the terminal manager handles what it can.
-        if (this.terminal.openEditor) {
-          // This is a bit tmux specific still, might need refinement
-          // but we'll keep it for now to maintain parity.
-          // Need window index... listWindows is needed in ITerminalManager?
-          // For now let's skip the openEditor call here or assume switchToWindow handles it.
+      if (terminal.hasWindow(windowName)) {
+        this.logger.warn(`⚠️  Session for issue #${issueNumber} already exists`);
+        this.logger.info('→ Switching to existing session...');
+        if (terminal.openEditor) {
+          terminal.openEditor(0, this.config.getItermOpenMode(), this.config.getItermFocus());
         }
-        
         return;
       }
     } else {
@@ -181,16 +173,16 @@ export class WorktreeEngine {
     if (workerCount === 1) {
       this.logger.info('\nOpening Claude Code...');
       const prompt = `Solve the issue described in WORKTREE_TICKET.md`;
-      const { firstPaneId } = await this.terminal.createWindow(windowName, worktreePath, { instanceName: 'Coordinator', color: 'colour39' });
-      this.launchClaudeWithPrompt(firstPaneId, prompt);
+      const { firstPaneId } = await terminal.createWindow(windowName, worktreePath, { instanceName: 'Coordinator', color: 'colour39' });
+      this.launchClaudeWithPrompt(terminal, firstPaneId, prompt);
       addWorker(worktreePath, issueNumber, 1, firstPaneId, 'coordinator');
     } else {
       this.logger.info(`\nOpening ${workerCount} Claude workers...`);
-      
+
       // Launch Coordinator
       const worker1Prompt = generateWorkerPrompt(1, workerCount, issueNumber);
-      const { firstPaneId } = await this.terminal.createWindow(windowName, worktreePath, { instanceName: 'Coordinator', color: 'colour39' });
-      this.launchClaudeWithPrompt(firstPaneId, worker1Prompt);
+      const { firstPaneId } = await terminal.createWindow(windowName, worktreePath, { instanceName: 'Coordinator', color: 'colour39' });
+      this.launchClaudeWithPrompt(terminal, firstPaneId, worker1Prompt);
       addWorker(worktreePath, issueNumber, 1, firstPaneId, 'coordinator');
 
       // Launch additional workers
@@ -199,13 +191,13 @@ export class WorktreeEngine {
         const direction = i % 2 === 0 ? 'vertical' : 'horizontal';
         const archetype = workerArchetypes[i];
         const workerPrompt = generateWorkerPrompt(i, workerCount, issueNumber, archetype);
-        
-        const config: ClaudeInstanceConfig = archetype 
+
+        const config: ClaudeInstanceConfig = archetype
           ? { instanceName: `${archetype.emoji} ${archetype.name}`, color: archetype.color, archetype }
           : {};
-          
-        const paneId = await this.terminal.splitPane(windowName, worktreePath, direction, config);
-        this.launchClaudeWithPrompt(paneId, workerPrompt);
+
+        const paneId = await terminal.splitPane(windowName, worktreePath, direction, config);
+        this.launchClaudeWithPrompt(terminal, paneId, workerPrompt);
         addWorker(worktreePath, issueNumber, i, paneId, archetype?.id ?? 'unknown');
       }
     }
@@ -216,33 +208,40 @@ export class WorktreeEngine {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const overseerPrompt = generateOverseerPrompt(issueNumber);
-      const overseerPaneId = await this.terminal.splitPane(windowName, worktreePath, 'vertical', { instanceName: 'Overseer', color: 'colour208' });
-      this.launchClaudeWithPrompt(overseerPaneId, overseerPrompt);
+      const overseerPaneId = await terminal.splitPane(windowName, worktreePath, 'vertical', { instanceName: 'Overseer', color: 'colour208' });
+      this.launchClaudeWithPrompt(terminal, overseerPaneId, overseerPrompt);
       addWorker(worktreePath, issueNumber, 0, overseerPaneId, 'overseer');
     }
 
     const layout = this.config.getLayout();
     const totalPanes = workerCount + (watcher ? 1 : 0);
     if (layout && totalPanes > 1) {
-      this.terminal.selectLayout(windowName, layout);
+      terminal.selectLayout(windowName, layout);
+    }
+
+    if (terminal.openEditor) {
+      terminal.openEditor(0, this.config.getItermOpenMode(), this.config.getItermFocus());
     }
   }
 
-  private launchClaudeWithPrompt(targetId: string, prompt: string) {
-    this.terminal.runCommand(targetId, 'claude');
+  private launchClaudeWithPrompt(terminal: ITerminalManager, targetId: string, prompt: string) {
+    terminal.runCommand(targetId, 'claude');
     setTimeout(() => {
-      this.terminal.runCommand(targetId, prompt);
+      terminal.runCommand(targetId, prompt);
     }, 5000);
   }
 
   async create(topic: string): Promise<void> {
     const provider = this.config.getTicketingProvider();
+    const terminal = this.terminalFactory(this.config.getGuideSessionName(topic));
     const slugifiedTopic = topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const windowName = `guide-${slugifiedTopic}`.slice(0, 32);
 
-    if (this.terminal.hasWindow(windowName)) {
+    if (terminal.hasWindow(windowName)) {
       this.logger.info(`→ Switching to existing Guide session for: ${topic}`);
-      this.terminal.switchToWindow(windowName);
+      if (terminal.openEditor) {
+        terminal.openEditor(0, this.config.getItermOpenMode(), this.config.getItermFocus());
+      }
       return;
     }
 
@@ -254,17 +253,17 @@ export class WorktreeEngine {
     const guidePrompt = this.buildGuidePrompt(guideArchetype.prompt, topic, provider);
 
     this.logger.info('\nLaunching The Guide...');
-    
-    const { firstPaneId, windowIndex } = await this.terminal.createWindow(windowName, this.git.repoRoot, { 
-      instanceName: 'The Guide', 
+
+    const { firstPaneId, windowIndex } = await terminal.createWindow(windowName, this.git.repoRoot, {
+      instanceName: 'The Guide',
       color: guideArchetype.color,
       archetype: guideArchetype
     });
 
-    this.launchClaudeWithPrompt(firstPaneId, guidePrompt);
+    this.launchClaudeWithPrompt(terminal, firstPaneId, guidePrompt);
 
-    if (this.terminal.openEditor) {
-      this.terminal.openEditor(windowIndex, this.config.getItermOpenMode(), this.config.getItermFocus());
+    if (terminal.openEditor) {
+      terminal.openEditor(windowIndex, this.config.getItermOpenMode(), this.config.getItermFocus());
     }
 
     this.logger.success('\n✓ The Guide is ready.');
@@ -272,9 +271,10 @@ export class WorktreeEngine {
   }
 
   async split(issueNumber: string, options: { vertical?: boolean, archetype?: Archetype }): Promise<void> {
+    const terminal = this.terminalFactory(this.config.getWorktreeSessionName(issueNumber));
     const windowName = `issue-${issueNumber}`;
 
-    if (!this.terminal.hasWindow(windowName)) {
+    if (!terminal.hasWindow(windowName)) {
       throw new Error(`No terminal window '${windowName}' found.`);
     }
 
@@ -289,7 +289,7 @@ export class WorktreeEngine {
     const archetype = options.archetype;
     const existingPaneIds = archetype?.id === 'adversary' ? getRegisteredPaneIds(worktreePath) : [];
 
-    const paneCount = this.terminal.countPanes ? this.terminal.countPanes(windowName) : 0;
+    const paneCount = terminal.countPanes ? terminal.countPanes(windowName) : 0;
     const workerNumber = paneCount + 1;
     const vertical = options.vertical ?? (workerNumber % 2 !== 0);
 
@@ -302,13 +302,13 @@ export class WorktreeEngine {
     }
 
     const prompt = generateWorkerPrompt(workerNumber, workerNumber, issueNumber, archetype);
-    
+
     const config: ClaudeInstanceConfig = archetype
       ? { instanceName: `${archetype.emoji} ${archetype.name}`, color: archetype.color, archetype }
       : {};
-      
-    const newPaneId = await this.terminal.splitPane(windowName, worktreePath, vertical ? 'vertical' : 'horizontal', config);
-    this.launchClaudeWithPrompt(newPaneId, prompt);
+
+    const newPaneId = await terminal.splitPane(windowName, worktreePath, vertical ? 'vertical' : 'horizontal', config);
+    this.launchClaudeWithPrompt(terminal, newPaneId, prompt);
     addWorker(worktreePath, issueNumber, workerNumber, newPaneId, archetype?.id ?? 'unknown');
 
     if (archetype?.id === 'adversary' && existingPaneIds.length > 0) {
@@ -316,8 +316,8 @@ export class WorktreeEngine {
       setTimeout(() => {
         this.logger.warn(`⚔️  Broadcasting Adversary alert to ${existingPaneIds.length} existing worker(s)...`);
         for (const paneId of existingPaneIds) {
-          if (this.terminal.broadcastToPane) {
-            this.terminal.broadcastToPane(paneId, broadcastMessage);
+          if (terminal.broadcastToPane) {
+            terminal.broadcastToPane(paneId, broadcastMessage);
           }
         }
       }, 2000);

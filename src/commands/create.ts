@@ -24,8 +24,7 @@ export async function createCommand(topic?: string): Promise<void> {
   const logger = new CliLogger();
   const git = new GitOperations();
   const config = new ConfigManager(git.repoRoot);
-  const terminal = getTerminalManager(config.getSessionName());
-  const engine = new WorktreeEngine(terminal, logger, git, config);
+  const engine = new WorktreeEngine((sessionName) => getTerminalManager(sessionName), logger, git, config);
 
   try {
     const resolvedTopic = topic || await promptForTopic();

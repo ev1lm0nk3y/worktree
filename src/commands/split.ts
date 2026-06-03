@@ -46,8 +46,7 @@ export async function splitCommand(issueNumber: string, options?: SplitOptions):
   const logger = new CliLogger();
   const git = new GitOperations();
   const config = new ConfigManager(git.repoRoot);
-  const terminal = getTerminalManager(config.getSessionName());
-  const engine = new WorktreeEngine(terminal, logger, git, config);
+  const engine = new WorktreeEngine((sessionName) => getTerminalManager(sessionName), logger, git, config);
 
   try {
     let archetype: Archetype | undefined;
@@ -69,7 +68,7 @@ export async function splitCommand(issueNumber: string, options?: SplitOptions):
     });
 
     if (options?.focus) {
-      terminal.switchToWindow(`issue-${issueNumber}`);
+      getTerminalManager(config.getWorktreeSessionName(issueNumber)).switchToWindow(`issue-${issueNumber}`);
     }
 
   } catch (error: any) {
