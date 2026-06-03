@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { existsSync, writeFileSync, unlinkSync } from 'fs';
+import { existsSync, writeFileSync, unlinkSync, readFileSync } from 'fs';
 import { ITerminalManager, ClaudeInstanceConfig, TerminalWindow } from '../core/interfaces.js';
 
 export class TmuxOperations implements ITerminalManager {
@@ -187,12 +187,10 @@ export class TmuxOperations implements ITerminalManager {
 
   openEditor(windowIndex: number, mode: 'window' | 'tab' | 'current' = 'window', focus: boolean = true): void {
     const isNewSession = !existsSync(this.markerFile);
-    const activate = focus ? 'activate' : '';
     const attachCmd = `tmux attach -t ${this.sessionName}`;
+    const activate = focus ? 'activate' : '';
 
     if (isNewSession) {
-      writeFileSync(this.markerFile, '');
-
       let openStep: string;
       if (mode === 'tab') {
         openStep = `
@@ -210,24 +208,54 @@ export class TmuxOperations implements ITerminalManager {
         openStep = `create window with default profile`;
       }
 
-      const script = `
+      const captureScript = `
         tell application "iTerm"
           ${activate}
           ${openStep}
           tell current session of current window
             write text "${attachCmd}"
-            delay 0.5
-            write text "${windowIndex}"
           end tell
+          set tabId to id of current tab of current window
+          set winId to id of current window
+          return (winId as text) & ":" & (tabId as text)
         end tell
       `;
 
-      execSync(`osascript -e '${script}'`);
-    } else {
-      if (focus) {
-        execSync(`osascript -e 'tell application "iTerm" to activate'`);
+      try {
+        const result = execSync(`osascript -e '${captureScript}'`, { encoding: 'utf8' }).trim();
+        writeFileSync(this.markerFile, result);
+      } catch {
+        writeFileSync(this.markerFile, '');
       }
-      this.sendKeys(this.sessionName, `C-b ${windowIndex}`);
+    } else {
+      const marker = readFileSync(this.markerFile, 'utf8').trim();
+      const parts = marker.split(':');
+      const winId = parts[0] ? parseInt(parts[0], 10) : NaN;
+      const tabId = parts[1] ? parseInt(parts[1], 10) : NaN;
+
+      if (!isNaN(winId) && !isNaN(tabId)) {
+        const switchScript = `
+          tell application "iTerm"
+            activate
+            set theWindow to (first window whose id is ${winId})
+            tell theWindow
+              set theTab to (first tab whose id is ${tabId})
+              select theTab
+            end tell
+          end tell
+        `;
+        try {
+          execSync(`osascript -e '${switchScript}'`);
+          return;
+        } catch {
+          unlinkSync(this.markerFile);
+          this.openEditor(windowIndex, mode, focus);
+          return;
+        }
+      } else {
+        unlinkSync(this.markerFile);
+        this.openEditor(windowIndex, mode, focus);
+      }
     }
   }
 
