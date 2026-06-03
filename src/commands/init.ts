@@ -154,7 +154,6 @@ export async function initCommand(): Promise<void> {
     console.log(chalk.green('\n✓ Configuration created successfully!'));
     console.log(chalk.gray('\nDetected project information:'));
     console.log(chalk.gray(`  Project:   ${config.getProjectName()}`));
-    console.log(chalk.gray(`  Session:   ${config.getSessionName()}`));
     console.log(chalk.gray(`  Ticketing: ${provider}`));
 
     const commands = config.getCommands();

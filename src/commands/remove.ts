@@ -10,7 +10,7 @@ export async function removeCommand(issueNumber: string): Promise<void> {
   try {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
-    const tmux = getTerminalManager(config.getSessionName());
+    const tmux = getTerminalManager(config.getWorktreeSessionName(issueNumber));
     
     // Find worktree for this issue
     const worktrees = git.listWorktrees();
