@@ -68,7 +68,10 @@ export async function splitCommand(issueNumber: string, options?: SplitOptions):
     });
 
     if (options?.focus) {
-      getTerminalManager(config.getWorktreeSessionName(issueNumber)).switchToWindow(`issue-${issueNumber}`);
+      const focusTerminal = getTerminalManager(config.getWorktreeSessionName(issueNumber));
+      if (focusTerminal.openEditor) {
+        focusTerminal.openEditor(0, config.getItermOpenMode(), config.getItermFocus());
+      }
     }
 
   } catch (error: any) {
