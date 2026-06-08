@@ -145,6 +145,13 @@ export class TmuxOperations implements ITerminalManager {
     this.exec(`tmux send-keys -t "${target}" Enter`);
   }
 
+  // Sends arbitrary text via tmux's buffer to avoid shell escaping issues.
+  // Handles backticks, newlines, and other special characters safely.
+  sendBuffered(targetId: string, text: string): void {
+    execSync('tmux load-buffer -', { input: text, encoding: 'utf8' });
+    this.exec(`tmux paste-buffer -t "${targetId}"`);
+  }
+
   private applyPaneIdentity(paneId: string, config?: ClaudeInstanceConfig): void {
     if (!config) return;
     if (config.instanceName) {

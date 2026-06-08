@@ -20,6 +20,8 @@ export interface ITerminalManager {
   createWindow(windowName: string, workingDirectory: string, config?: ClaudeInstanceConfig): Promise<{ windowIndex: number; firstPaneId: string }>;
   splitPane(windowName: string, workingDirectory: string, direction: 'horizontal' | 'vertical', config?: ClaudeInstanceConfig): Promise<string>;
   runCommand(targetId: string, command: string): void;
+  sendBuffered?(targetId: string, text: string): void;
+  sendEnter?(targetId: string): void;
   switchToWindow(windowName: string): void;
   selectLayout(windowName: string, layout: string): void;
   openEditor?(windowIndex: number, mode?: 'window' | 'tab' | 'current', focus?: boolean): void;

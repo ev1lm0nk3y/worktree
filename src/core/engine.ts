@@ -227,7 +227,12 @@ export class WorktreeEngine {
   private launchClaudeWithPrompt(terminal: ITerminalManager, targetId: string, prompt: string) {
     terminal.runCommand(targetId, 'claude');
     setTimeout(() => {
-      terminal.runCommand(targetId, prompt);
+      if (terminal.sendBuffered && terminal.sendEnter) {
+        terminal.sendBuffered(targetId, prompt);
+        terminal.sendEnter(targetId);
+      } else {
+        terminal.runCommand(targetId, prompt);
+      }
     }, 5000);
   }
 
