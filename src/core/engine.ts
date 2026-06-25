@@ -139,7 +139,9 @@ export class WorktreeEngine {
     // Prepare Claude instances
     const workerArchetypes: { [key: number]: Archetype } = archetypes || {};
     
-    if (deployedPool && workerCount > 1 && !archetypes) {
+    const noArchetypesAssigned = Object.keys(workerArchetypes).length === 0;
+
+    if (deployedPool && workerCount > 1 && noArchetypesAssigned) {
       const archetypeOffset = poolHasCoordinator ? 2 : 1;
       for (let i = 2; i <= workerCount; i++) {
         const archetypeId = deployedPool.workers[i - archetypeOffset];
@@ -148,8 +150,7 @@ export class WorktreeEngine {
           workerArchetypes[i] = archetype;
         }
       }
-    } else if (workerCount > 1 && !archetypes) {
-      // Defaults if not provided
+    } else if (workerCount > 1 && noArchetypesAssigned) {
       for (let i = 2; i <= workerCount; i++) {
         workerArchetypes[i] = getDefaultArchetypeForWorker(i);
       }
