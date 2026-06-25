@@ -50,9 +50,9 @@ export class GitOperations {
     return `issue-${issueNumber}`;
   }
 
-  getWorktreePath(issueNumber: string, description?: string): string {
+  getWorktreePath(issueNumber: string, description?: string, baseDir?: string): string {
     const branchName = this.createBranchName(issueNumber, description);
-    return path.join(path.dirname(this.repoRoot), branchName);
+    return path.join(baseDir ?? path.dirname(this.repoRoot), branchName);
   }
 
   worktreeExists(worktreePath: string): boolean {
@@ -99,9 +99,9 @@ export class GitOperations {
     return worktrees;
   }
 
-  createWorktree(issueNumber: string, description?: string): string {
+  createWorktree(issueNumber: string, description?: string, baseDir?: string): string {
     const branchName = this.createBranchName(issueNumber, description);
-    const worktreePath = this.getWorktreePath(issueNumber, description);
+    const worktreePath = this.getWorktreePath(issueNumber, description, baseDir);
 
     if (this.worktreeExists(worktreePath)) {
       return worktreePath;

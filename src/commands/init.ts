@@ -123,10 +123,22 @@ async function ensureLinearApiKey(): Promise<void> {
   console.log(chalk.gray(`     [ -f ${envFile} ] && source ${envFile}`));
 }
 
+async function promptWorktreePath(defaultPath: string): Promise<string> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(chalk.yellow(`Worktree storage path [${defaultPath}]: `), (answer) => {
+      rl.close();
+      const trimmed = answer.trim();
+      resolve(trimmed || defaultPath);
+    });
+  });
+}
+
 export async function initCommand(): Promise<void> {
   try {
     const git = new GitOperations();
     const config = new ConfigManager(git.repoRoot);
+    const defaultWorktreePath = path.dirname(git.repoRoot);
 
     if (config.exists()) {
       const current = config.hasTicketingProvider() ? config.getTicketingProvider() : 'unset';
@@ -135,7 +147,10 @@ export async function initCommand(): Promise<void> {
       console.log(chalk.gray(`   Current ticketing: ${current}`));
       const provider = await promptTicketingProvider();
       config.setTicketingProvider(provider);
+      const worktreePath = await promptWorktreePath(config.getWorktreeBasePath() || defaultWorktreePath);
+      config.setWorktreeBasePath(worktreePath);
       console.log(chalk.green(`✓ Updated ticketing provider to ${provider}`));
+      console.log(chalk.green(`✓ Updated worktree storage path to ${worktreePath}`));
       if (provider === 'linear') {
         await ensureLinearApiKey();
       }
@@ -145,7 +160,8 @@ export async function initCommand(): Promise<void> {
     console.log(chalk.blue('Initializing worktree configuration...'));
 
     const provider = await promptTicketingProvider();
-    config.createDefaultConfig(provider);
+    const worktreePath = await promptWorktreePath(defaultWorktreePath);
+    config.createDefaultConfig(provider, worktreePath);
 
     if (provider === 'linear') {
       await ensureLinearApiKey();
@@ -153,8 +169,9 @@ export async function initCommand(): Promise<void> {
 
     console.log(chalk.green('\n✓ Configuration created successfully!'));
     console.log(chalk.gray('\nDetected project information:'));
-    console.log(chalk.gray(`  Project:   ${config.getProjectName()}`));
-    console.log(chalk.gray(`  Ticketing: ${provider}`));
+    console.log(chalk.gray(`  Project:       ${config.getProjectName()}`));
+    console.log(chalk.gray(`  Ticketing:     ${provider}`));
+    console.log(chalk.gray(`  Worktree path: ${worktreePath}`));
 
     const commands = config.getCommands();
     if (commands && Object.keys(commands).length > 0) {

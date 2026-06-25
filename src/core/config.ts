@@ -17,6 +17,7 @@ export interface WorktreeConfig {
   session?: string;
   linear_workspace?: string;
   ticketing?: TicketProvider;
+  worktree_path?: string;
   iterm?: ItermConfig;
   layout?: TmuxLayout;
   workers?: number;
@@ -126,6 +127,21 @@ export class ConfigManager {
     return 1;
   }
 
+  getWorktreeBasePath(): string | undefined {
+    return this.config.worktree_path;
+  }
+
+  setWorktreeBasePath(worktreePath: string): void {
+    this.config.worktree_path = worktreePath;
+    const yamlContent = dump(this.config, {
+      indent: 2,
+      lineWidth: -1,
+      quotingType: '"',
+      forceQuotes: false
+    });
+    writeFileSync(this.configPath, yamlContent);
+  }
+
   setTicketingProvider(provider: TicketProvider): void {
     this.config.ticketing = provider;
     const yamlContent = dump(this.config, {
@@ -196,7 +212,7 @@ export class ConfigManager {
     return commands;
   }
 
-  createDefaultConfig(provider: TicketProvider = 'github'): void {
+  createDefaultConfig(provider: TicketProvider = 'github', worktreeBasePath?: string): void {
     const projectName = path.basename(path.dirname(this.configPath));
     const detectedCommands = this.detectCommands();
 
@@ -204,6 +220,7 @@ export class ConfigManager {
       name: projectName,
       session: projectName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_workers',
       ticketing: provider,
+      ...(worktreeBasePath ? { worktree_path: worktreeBasePath } : {}),
       iterm: { open: 'window', focus: true },
       layout: 'tiled',
       workers: 1,

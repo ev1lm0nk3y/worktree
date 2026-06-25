@@ -53,7 +53,7 @@ export class WorktreeEngine {
     }
     
     // Check if worktree already exists
-    const worktreePath = this.git.getWorktreePath(issueNumber, description);
+    const worktreePath = this.git.getWorktreePath(issueNumber, description, this.config.getWorktreeBasePath());
     const windowName = `issue-${issueNumber}`;
     
     if (this.git.worktreeExists(worktreePath)) {
@@ -71,7 +71,7 @@ export class WorktreeEngine {
     } else {
       // Create worktree
       this.logger.startSpinner(`Creating worktree for issue #${issueNumber}...`);
-      this.git.createWorktree(issueNumber, description);
+      this.git.createWorktree(issueNumber, description, this.config.getWorktreeBasePath());
       this.logger.stopSpinner(true, `Created worktree at: ${worktreePath}`);
     }
     
