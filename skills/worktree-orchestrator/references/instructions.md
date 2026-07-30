@@ -1,6 +1,6 @@
-# Worktree Orchestration: AI Agent Guide
+# Worktree Orchestration: Agent Guide
 
-This document defines how an AI agent (Gemini, Claude, or others) should use the `worktree` (`wt`) CLI tool to orchestrate multi-agent workflows.
+This document defines how Claude should use the `worktree` (`wt`) CLI tool to orchestrate multi-agent workflows.
 
 ## Core Capabilities
 
@@ -16,8 +16,8 @@ This document defines how an AI agent (Gemini, Claude, or others) should use the
 ### 1. Starting a New Task (The "Agent" Entry Point)
 When the user has a vague idea or a new feature request:
 - **Action**: Run `wt create "[topic]"`
-- **Result**: A new worktree and tmux session are created. A **Guide** archetype is launched to interact with the user and generate `WORKTREE_COORDINATION.md`.
-- **Handoff**: Once the Guide has produced the coordination document, subsequent workers can be added.
+- **Result**: The **Guide** archetype launches in the main repo (no worktree yet). The Guide converses with the user to refine scope and acceptance criteria, creates a ticket in the configured provider (Linear or GitHub), then calls `wt open <ticket-id>` to provision the worktree and launch workers.
+- **Handoff**: Workers start inside the newly created worktree with `WORKTREE_COORDINATION.md` already generated.
 
 ### 2. Scaling Up (The "Coordinator" Role)
 If a task is complex and requires multiple perspectives:
@@ -45,6 +45,9 @@ All workers in a `worktree` session MUST coordinate via the `WORKTREE_COORDINATI
 - **Adversary**: Provides the final "Lead Brief" before the task is considered done.
 
 ## Agent Guidelines
-- **Always check status**: Run `wt list` to see active worktrees.
-- **Stay isolated**: Only perform work within the `worktree/` directory created by the tool.
-- **Refine first**: Use `wt create` and the **Guide** archetype to ensure "Definition of Done" is locked before implementation.
+- **Always check status first**: Run `wt list` to see active worktrees before opening a new one.
+- **Stay isolated**: Workers should only perform work within the worktree directory created by `wt open`.
+- **Refine before implementing**: Use `wt create` and the **Guide** archetype to lock the "Definition of Done" before any implementation starts.
+- **Use pools for standard phases**: Researchers → Coders → Reviewers is the standard development lifecycle.
+- **Scale dynamically**: Start with `wt open`, then add workers with `wt split -a <archetype>` as complexity increases.
+- **The Adversary closes the loop**: Always run an Adversary before considering implementation complete — either via `--deploy-pool Reviewers` or `wt split -a adversary`.

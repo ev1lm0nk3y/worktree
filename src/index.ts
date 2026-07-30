@@ -25,6 +25,7 @@ program
   .option('--deploy-pool [name]', 'Deploy a pre-configured worker pool (interactive selection if no name given)')
   .option('--watcher', 'Spawn an additional overseer worker to monitor progress')
   .option('--no-wizard', 'Skip archetype selection wizard and use defaults')
+  .option('--archetypes <list>', 'Comma-delimited archetypes for workers 2..N, e.g. detective,craftsman')
   .action(openCommand);
 
 program

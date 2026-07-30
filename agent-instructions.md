@@ -7,7 +7,8 @@ This document defines how an AI agent (Gemini, Claude, or others) should use the
 1. **Guided Ticket Creation (`wt create`)**: Start a new task without a pre-existing ticket. Spawns a **Guide** to scope requirements, create the ticket, and provision the worktree.
 2. **Issue-Driven Workspaces (`wt open`)**: Provision a workspace tied to a GitHub or Linear issue.
 3. **Team Deployment (`--deploy-pool`)**: Launch pre-configured teams (Researchers, Coders, Reviewers).
-4. **Dynamic Scaling (`wt split`)**: Add specific archetypes (Architect, Detective, etc.) to an active session.
+4. **Explicit Archetype Assignment (`--archetypes`)**: Choose specific archetypes for workers 2..N at launch time, bypassing the interactive wizard.
+5. **Dynamic Scaling (`wt split`)**: Add specific archetypes (Architect, Detective, etc.) to an active session.
 
 ---
 
@@ -35,6 +36,14 @@ For well-defined phases of development:
 - **Research Phase**: `wt open [id] --deploy-pool Researchers`
 - **Coding Phase**: `wt open [id] --deploy-pool Coders`
 - **Review Phase**: `wt open [id] --deploy-pool Reviewers`
+
+### 4. Assigning Archetypes Explicitly
+When the team composition is already known and the interactive wizard should be skipped:
+- **Action**: Run `wt open [id] -w 3 --archetypes detective,craftsman`
+- **Behavior**: Archetypes are assigned in order to workers 2, 3, ... N (worker 1 is always the Coordinator). Names are matched case-insensitively and by partial match, same as `wt split -a`.
+- **Worker count is optional**: If `-w`/`--workers` is omitted, the worker count defaults to the list length + 1 (one Coordinator plus one worker per listed archetype).
+- **Partial lists**: If the list has fewer entries than available worker slots, the remaining workers still go through the interactive wizard (unless `--no-wizard` is also passed).
+- **Mutually exclusive with `--deploy-pool`**: Use one or the other, not both.
 
 ---
 
