@@ -94,12 +94,25 @@ worktree create "refactor-auth-logic"
 
 This launches **The Guide** — a conversational archetype that runs in the main repository (no worktree is created yet). The Guide:
 
-1. Chats with you to clarify scope, acceptance criteria, and edge cases.
-2. Creates a ticket in your configured ticketing provider (Linear or GitHub).
-3. Asks how you want to staff the work (single worker, multi-worker, pool, overseer).
-4. Calls `wt open <ticket-id> [flags]` to create the properly-named worktree and launch workers.
+1. Triages how fuzzy your request is and, if warranted, reaches for a dedicated grill-family skill before chatting further (see below).
+2. Chats with you to clarify scope, acceptance criteria, and edge cases.
+3. Creates a ticket in your configured ticketing provider (Linear or GitHub).
+4. Asks how you want to staff the work (single worker, multi-worker, pool, overseer).
+5. Calls `wt open <ticket-id> [flags]` to create the properly-named worktree and launch workers.
 
 The worktree is always created from a real ticket identifier, so branch names, `CLAUDE.md`, and tmux windows all reflect the actual ticket from the start.
+
+**Level-of-effort triage:** before probing for acceptance criteria, the Guide picks the lightest fitting tool for how settled your request already is:
+
+| Situation | Guide reaches for |
+|---|---|
+| Fuzzy plan, domain language unsettled, nothing coded yet | `grill-with-docs` skill |
+| You just want to think out loud, no documentation artifact needed | `grilling` skill |
+| Plan is already clear, just need terminology pinned down | `domain-modeling` skill |
+| Change is massive and the route through it is still foggy | `wayfinder` skill, then hands off to `grill-with-docs` |
+| Request is already small and unambiguous | Skips straight to its own lightweight Q&A |
+
+This is a **soft dependency**: these are separate, optional skills, not bundled with `worktree`. If a given skill isn't installed in your environment, the Guide falls back to its own conversational probing instead of blocking on it.
 
 ## AI Agent Orchestration
 
