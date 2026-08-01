@@ -136,6 +136,11 @@ WAITING STATE:
 - You must wait for Worker 1 (Coordinator) to create a file named \`WORKTREE_WORKER_${workerNumber}.md\` in the root of the worktree.
 - Check for this file's existence every 30 seconds.
 - Once \`WORKTREE_WORKER_${workerNumber}.md\` exists, read it and WORKTREE_TICKET.md to understand your specific assignments.
-- Report your progress and completions inside your \`WORKTREE_WORKER_${workerNumber}.md\` file.`;
+- Report your progress and completions inside your \`WORKTREE_WORKER_${workerNumber}.md\` file.
+
+CONTINUATION (after finishing everything currently assigned):
+- Re-read \`WORKTREE_WORKER_${workerNumber}.md\` every 3 minutes to check whether the Coordinator appended a new task.
+- "No new content since your last read" means no new work yet — wait 3 minutes and check again rather than idling indefinitely.
+- Stop this loop once WORKTREE_COORDINATION.md's Team Status marks the issue complete.`;
   }
 }
