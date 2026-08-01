@@ -125,6 +125,12 @@ DELEGATION PROTOCOL:
     const archetypePrompt = archetype ? ` ${archetype.prompt}` : '';
     return `You are Worker ${workerNumber}${roleName} of ${totalWorkers} Claude workers on issue #${issueNumber}.${archetypePrompt}
 
+PRE-WORK CONTEXT PASS (do this once, before waiting):
+- Read WORKTREE_TICKET.md to understand the goal, then read-only explore the codebase for the systems, files, and topics it mentions.
+- Build a mental model of the relevant environment: what modules/services are involved, how they currently work, and where related code lives.
+- Do NOT write, edit, or create any files during this pass — this is reconnaissance only, so you're ready to move fast once tasked.
+- This pass is bounded: once you have a working understanding of the ticket's context, stop and move to the waiting state below. Do not keep exploring indefinitely.
+
 WAITING STATE:
 - Do NOT start working yet.
 - You must wait for Worker 1 (Coordinator) to create a file named \`WORKTREE_WORKER_${workerNumber}.md\` in the root of the worktree.
