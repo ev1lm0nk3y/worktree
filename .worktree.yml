@@ -9,15 +9,22 @@ workers: 1
 claude_context: |
   # worktree
 
-  Read CLAUDE.md for context on this repo. All new worktrees should maintain a PR_DESCRIPTION.md
-  file which caches the contents of the ticket or issue.
+  Read CLAUDE.md first for this repo's architecture and conventions.
 
-  A WORKTREE_COORDINATION.md doc should be used to maange the work between multiple workers.
+  ## Generated context files (auto-created per worktree, gitignored)
+  Not obvious from source alone: WORKTREE_TICKET.md caches the issue this worktree is for,
+  treat it as the scope of record. WORKTREE_COORDINATION.md appears only when workers > 1 and
+  holds each worker's archetype assignment - coordinate through it rather than assuming another
+  worker's state. OVERSEER.md appears only with --watcher. WORKTREE_WORKERS.json is a
+  machine-managed registry; leave it alone.
 
-  A CLAUDE_WORKTREE.md doc should be constantly updated to retain context key for Claude's
-  operation within this repo
+  ## Working in a session
+  Stay within your assigned archetype's lane and this worktree's directory. Rebase on
+  origin/main before starting and again before opening a PR. Run the commands below before
+  calling work done. `wt list` shows other active sessions if you need that context.
 
-  All 3 of those files should be in .gitignore
+  Full orchestration guide (archetypes, pools, `wt split` scaling, the Guide archetype for
+  ticket-less starts): agent-instructions.md in the repo root.
 
 commands:
   dev: npm run dev
