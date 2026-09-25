@@ -198,32 +198,46 @@ export class TmuxOperations implements ITerminalManager {
     const activate = focus ? 'activate' : '';
 
     if (isNewSession) {
+      // Each branch captures targetWindow/targetTab as direct object references
+      // rather than querying "current window"/"current tab" in a later statement.
+      // Re-querying "current tab of current window" after creating it is racy --
+      // iTerm's current-tab pointer can lag right after activate/create, which is
+      // what produced the intermittent -1728 "can't get id of current tab" error.
       let openStep: string;
       if (mode === 'tab') {
         openStep = `
           if (count of windows) = 0 then
-            create window with default profile
+            set targetWindow to (create window with default profile)
+            set targetTab to current tab of targetWindow
           else
-            tell current window to create tab with default profile
+            set targetWindow to current window
+            tell targetWindow
+              set targetTab to (create tab with default profile)
+            end tell
           end if`;
       } else if (mode === 'current') {
         openStep = `
           if (count of windows) = 0 then
-            create window with default profile
-          end if`;
+            set targetWindow to (create window with default profile)
+          else
+            set targetWindow to current window
+          end if
+          set targetTab to current tab of targetWindow`;
       } else {
-        openStep = `create window with default profile`;
+        openStep = `
+          set targetWindow to (create window with default profile)
+          set targetTab to current tab of targetWindow`;
       }
 
       const captureScript = `
         tell application "iTerm"
           ${activate}
           ${openStep}
-          tell current session of current window
+          tell current session of targetTab
             write text "${attachCmd}"
           end tell
-          set tabId to id of current tab of current window
-          set winId to id of current window
+          set tabId to id of targetTab
+          set winId to id of targetWindow
           return (winId as text) & ":" & (tabId as text)
         end tell
       `;
