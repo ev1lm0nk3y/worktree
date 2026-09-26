@@ -203,6 +203,8 @@ export class TmuxOperations implements ITerminalManager {
       // Re-querying "current tab of current window" after creating it is racy --
       // iTerm's current-tab pointer can lag right after activate/create, which is
       // what produced the intermittent -1728 "can't get id of current tab" error.
+      // The ids are read before "write text" for the same reason: running tmux
+      // attach can invalidate the index-based tab reference mid-script.
       let openStep: string;
       if (mode === 'tab') {
         openStep = `
@@ -233,11 +235,11 @@ export class TmuxOperations implements ITerminalManager {
         tell application "iTerm"
           ${activate}
           ${openStep}
+          set tabId to id of targetTab
+          set winId to id of targetWindow
           tell current session of targetTab
             write text "${attachCmd}"
           end tell
-          set tabId to id of targetTab
-          set winId to id of targetWindow
           return (winId as text) & ":" & (tabId as text)
         end tell
       `;
