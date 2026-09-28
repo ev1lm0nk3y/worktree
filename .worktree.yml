@@ -1,5 +1,4 @@
 name: worktree
-session: worktree_workers
 ticketing: github
 iterm:
   open: tab

@@ -280,7 +280,6 @@ Creates `.worktree.yml` with template:
 ```yaml
 # Project metadata
 name: my-repo
-session: my-repo_workers
 
 # Ticketing system
 ticketing: linear

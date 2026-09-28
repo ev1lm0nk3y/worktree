@@ -60,18 +60,6 @@ describe('ConfigManager — getProjectName', () => {
   });
 });
 
-describe('ConfigManager — getSessionName', () => {
-  beforeEach(() => vi.resetAllMocks());
-
-  it('uses session field from config when set', () => {
-    expect(makeConfig('session: custom_session\n').getSessionName()).toBe('custom_session');
-  });
-
-  it('derives session name from project name when not set', () => {
-    expect(makeConfig('name: My Project\n').getSessionName()).toBe('my_project_workers');
-  });
-});
-
 describe('ConfigManager — getWorktreeSessionName', () => {
   beforeEach(() => vi.resetAllMocks());
 

@@ -195,7 +195,6 @@ Edit `.worktree.yml` in your repository:
 
 ```yaml
 name: "My Project"
-session: "myproject_workers"
 
 # Ticketing provider: "github" (default) or "linear"
 ticketing: github

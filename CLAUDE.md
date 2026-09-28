@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` — ESLint on `src/**/*.ts`.
 - `npm start` — runs the built CLI.
 - `npm link` — after `build`, exposes `worktree` and `wt` globally for local testing.
-- No test runner is configured; do not invent one.
+- `npm test` — `vitest run` over `tests/unit/`. `npm run test:watch` for watch mode.
 
 ## Architecture
 
@@ -46,5 +46,4 @@ Pool composition (defined in `core/pools.ts`): Researchers = `[architect, explor
 - `commander`'s `--no-wizard` sets `options.wizard = false` (not a `noWizard` field) — keep the `OpenOptions.wizard` shape.
 - `launchClaude*` methods rely on fixed `setTimeout` delays (5s for Claude init, 1s before Enter). Don't remove them without replacing with a readiness check — prompts sent too early are dropped.
 - iTerm/AppleScript path in `TmuxOperations.openEditor` is macOS-only; there is no Linux fallback.
-- The `session:` field in `.worktree.yml` is inert. `ConfigManager.getSessionName()` (the `<project>_workers` default) has no callers; session names are built by `getWorktreeSessionName()` from `name:` instead. Don't wire new code to `session:` expecting it to take effect.
 - `createWorktree` silently falls back to checking out an existing branch if `-b` fails — intentional, don't "fix" it.

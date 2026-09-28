@@ -14,7 +14,6 @@ export interface ItermConfig {
 
 export interface WorktreeConfig {
   name?: string;
-  session?: string;
   linear_workspace?: string;
   ticketing?: TicketProvider;
   worktree_path?: string;
@@ -59,16 +58,6 @@ export class ConfigManager {
 
   getProjectName(): string {
     return this.config.name || path.basename(path.dirname(this.configPath));
-  }
-
-  getSessionName(): string {
-    if (this.config.session) {
-      return this.config.session;
-    }
-
-    // Generate session name from project name
-    const projectName = this.getProjectName();
-    return projectName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_workers';
   }
 
   private getSlugPrefix(): string {
@@ -218,7 +207,6 @@ export class ConfigManager {
 
     const defaultConfig: WorktreeConfig = {
       name: projectName,
-      session: projectName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_workers',
       ticketing: provider,
       ...(worktreeBasePath ? { worktree_path: worktreeBasePath } : {}),
       iterm: { open: 'window', focus: true },
