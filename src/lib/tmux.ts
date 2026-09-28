@@ -236,7 +236,7 @@ export class TmuxOperations implements ITerminalManager {
       `;
 
       try {
-        const result = execSync(`osascript -e '${captureScript}'`, { encoding: 'utf8' }).trim();
+        const result = execSync(`osascript -e '${captureScript}'`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
         writeFileSync(this.markerFile, result);
       } catch {
         writeFileSync(this.markerFile, '');
@@ -246,7 +246,8 @@ export class TmuxOperations implements ITerminalManager {
 
       if (sessionId) {
         // Stale markers (including the old "winId:tabId" format) fall through
-        // the loop and error, which drops us into the recreate path below.
+        // the loop and error, which drops us into the recreate path below. That
+        // error is expected, so osascript stderr is discarded.
         const switchScript = `
           tell application "iTerm"
             activate
@@ -266,7 +267,7 @@ export class TmuxOperations implements ITerminalManager {
           end tell
         `;
         try {
-          execSync(`osascript -e '${switchScript}'`);
+          execSync(`osascript -e '${switchScript}'`, { stdio: 'ignore' });
           return;
         } catch {
           unlinkSync(this.markerFile);
