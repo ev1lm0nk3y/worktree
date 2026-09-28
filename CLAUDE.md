@@ -17,12 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-Single-process CLI. `src/index.ts` wires `commander` subcommands to handlers in `src/commands/` (`open`, `split`, `list`, `remove`, `init`, `tldr`, `completions`). Each handler composes four `lib/` modules:
+Single-process CLI. `src/index.ts` wires `commander` subcommands to handlers in `src/commands/` (`open`, `create`, `split`, `list`, `close`, `remove`, `init`, `tldr`, `completions`). Each handler composes modules from `src/core/` (git, github, config, engine, archetypes, pools) and `src/lib/` (tmux, logging):
 
-- `lib/git.ts` — `GitOperations` wraps `git` via `execSync`. Worktree path convention: sibling directory of repo root named `issue-<n>[-<desc>]`. Branch name mirrors directory name. Description is slugified to `[a-z0-9-]`.
-- `lib/github.ts` — `GitHubOperations` shells out to `gh` to fetch issue JSON; a missing issue is a hard error in `open`.
-- `lib/tmux.ts` — `TmuxOperations` owns session/window/pane lifecycle. Session name comes from config (defaults to `<project>_workers`). Each issue is one tmux window named `issue-<n>`; additional workers are split panes (alternating horizontal/vertical). Claude is launched by `send-keys`-ing `claude` + Enter into a captured `pane_id`, then — after a fixed 5s init delay — send-keys-ing the prompt and Enter. iTerm attach uses a `/tmp/.tmux-<session>-iterm` marker file to detect first-attach vs. switch.
-- `lib/config.ts` — `ConfigManager` loads `.worktree.yml` from repo root. When absent, commands are auto-detected from `package.json` / `Cargo.toml` / `pyproject.toml` / `requirements.txt`. `worktree init` writes a default config.
+- `core/git.ts` — `GitOperations` wraps `git` via `execSync`. Worktree path convention: sibling directory of repo root named `issue-<n>[-<desc>]`. Branch name mirrors directory name. Description is slugified to `[a-z0-9-]`.
+- `core/github.ts` — `GitHubOperations` shells out to `gh` to fetch issue JSON; a missing issue is a hard error in `open`.
+- `lib/tmux.ts` — `TmuxOperations` owns session/window/pane lifecycle. Session name comes from `ConfigManager.getWorktreeSessionName()` and is per-issue: `<project-slug>-issue-<n>`, slugified from `name:` in `.worktree.yml` (guide sessions are `<project-slug>-guide-<base64-topic>`). Each session holds one tmux window named `issue-<n>`; additional workers are split panes (alternating horizontal/vertical). Claude is launched by `send-keys`-ing `claude` + Enter into a captured `pane_id`, then — after a fixed 5s init delay — send-keys-ing the prompt and Enter. iTerm attach uses a `/tmp/.tmux-<session>-iterm` marker file to detect first-attach vs. switch.
+- `core/config.ts` — `ConfigManager` loads `.worktree.yml` from repo root. When absent, commands are auto-detected from `package.json` / `Cargo.toml` / `pyproject.toml` / `requirements.txt`. `worktree init` writes a default config.
 
 ## Agent Orchestration
 
@@ -34,16 +34,17 @@ Context files written into each worktree (and appended to its `.gitignore` by `t
 - `WORKTREE_COORDINATION.md` — only when `workers > 1`; carries per-worker archetype assignments.
 - `OVERSEER.md` — only when `--watcher` is set.
 
-Multi-worker flow in `commands/open.ts`: Worker 1 is always the Coordinator. Workers 2..N get archetypes from `lib/archetypes.ts` — either interactively via `selectArchetype` (readline wizard) or via `getDefaultArchetypeForWorker` when `--no-wizard`. Valid worker count is 1–5 (enforced). Prompts per worker are produced by `templates/coordination.md.ts:generateWorkerPrompt`; the overseer prompt by `templates/overseer.md.ts:generateOverseerPrompt`.
+Multi-worker flow in `commands/open.ts`: Worker 1 is always the Coordinator. Workers 2..N get archetypes from `core/archetypes.ts` — either interactively via `selectArchetype` (readline wizard) or via `getDefaultArchetypeForWorker` when `--no-wizard`. Valid worker count is 1–5 (enforced). Prompts per worker are produced by `templates/coordination.md.ts:generateWorkerPrompt`; the overseer prompt by `templates/overseer.md.ts:generateOverseerPrompt`.
 
-Archetype resolution in `commands/split.ts` uses `resolveArchetype()` from `lib/archetypes.ts`, which matches case-insensitively and by partial name; unrecognised input falls back to the interactive wizard rather than hard-exiting. Nine archetypes are defined: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`, `sentinel`, `scribe`, `guide`.
+Archetype resolution in `commands/split.ts` uses `resolveArchetype()` from `core/archetypes.ts`, which matches case-insensitively and by partial name; unrecognised input falls back to the interactive wizard rather than hard-exiting. Nine archetypes are defined: `architect`, `detective`, `craftsman`, `explorer`, `aesthete`, `adversary`, `sentinel`, `scribe`, `guide`.
 
-Pool composition (defined in `lib/pools.ts`): Researchers = `[architect, explorer]`, Coders = `[craftsman, aesthete]`, Reviewers = `[detective, adversary, sentinel]`. Custom pools load from `<repo>/.claude/archetype-groups.yml` then `~/.claude/archetype-groups.yml`.
+Pool composition (defined in `core/pools.ts`): Researchers = `[architect, explorer]`, Coders = `[craftsman, aesthete]`, Reviewers = `[detective, adversary, sentinel]`. Custom pools load from `<repo>/.claude/archetype-groups.yml` then `~/.claude/archetype-groups.yml`.
 
 ## Gotchas
 
-- Version string is duplicated: `package.json` `version` and the hardcoded `.version('0.4.2')` in `src/index.ts` must be bumped together.
+- Version string is duplicated: `package.json` `version` and the hardcoded `.version('0.5.0')` in `src/index.ts` must be bumped together.
 - `commander`'s `--no-wizard` sets `options.wizard = false` (not a `noWizard` field) — keep the `OpenOptions.wizard` shape.
 - `launchClaude*` methods rely on fixed `setTimeout` delays (5s for Claude init, 1s before Enter). Don't remove them without replacing with a readiness check — prompts sent too early are dropped.
-- iTerm/AppleScript path in `TmuxOperations.openITerm` is macOS-only; there is no Linux fallback.
+- iTerm/AppleScript path in `TmuxOperations.openEditor` is macOS-only; there is no Linux fallback.
+- The `session:` field in `.worktree.yml` is inert. `ConfigManager.getSessionName()` (the `<project>_workers` default) has no callers; session names are built by `getWorktreeSessionName()` from `name:` instead. Don't wire new code to `session:` expecting it to take effect.
 - `createWorktree` silently falls back to checking out an existing branch if `-b` fails — intentional, don't "fix" it.
