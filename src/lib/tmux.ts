@@ -198,49 +198,40 @@ export class TmuxOperations implements ITerminalManager {
     const activate = focus ? 'activate' : '';
 
     if (isNewSession) {
-      // Each branch captures targetWindow/targetTab as direct object references
-      // rather than querying "current window"/"current tab" in a later statement.
-      // Re-querying "current tab of current window" after creating it is racy --
-      // iTerm's current-tab pointer can lag right after activate/create, which is
-      // what produced the intermittent -1728 "can't get id of current tab" error.
-      // The ids are read before "write text" for the same reason: running tmux
-      // attach can invalidate the index-based tab reference mid-script.
+      // Track the tmux terminal by iTerm *session* id: iTerm's AppleScript
+      // dictionary gives `id` to windows and sessions but not to tabs, so
+      // reading `id of <tab>` always fails with -1728.
       let openStep: string;
       if (mode === 'tab') {
         openStep = `
           if (count of windows) = 0 then
-            set targetWindow to (create window with default profile)
-            set targetTab to current tab of targetWindow
+            set targetSession to current session of (create window with default profile)
           else
-            set targetWindow to current window
-            tell targetWindow
-              set targetTab to (create tab with default profile)
+            tell current window
+              set targetSession to current session of (create tab with default profile)
             end tell
           end if`;
       } else if (mode === 'current') {
         openStep = `
           if (count of windows) = 0 then
-            set targetWindow to (create window with default profile)
+            set targetSession to current session of (create window with default profile)
           else
-            set targetWindow to current window
-          end if
-          set targetTab to current tab of targetWindow`;
+            set targetSession to current session of current window
+          end if`;
       } else {
         openStep = `
-          set targetWindow to (create window with default profile)
-          set targetTab to current tab of targetWindow`;
+          set targetSession to current session of (create window with default profile)`;
       }
 
       const captureScript = `
         tell application "iTerm"
           ${activate}
           ${openStep}
-          set tabId to id of targetTab
-          set winId to id of targetWindow
-          tell current session of targetTab
+          set sid to id of targetSession
+          tell targetSession
             write text "${attachCmd}"
           end tell
-          return (winId as text) & ":" & (tabId as text)
+          return sid
         end tell
       `;
 
@@ -251,20 +242,27 @@ export class TmuxOperations implements ITerminalManager {
         writeFileSync(this.markerFile, '');
       }
     } else {
-      const marker = readFileSync(this.markerFile, 'utf8').trim();
-      const parts = marker.split(':');
-      const winId = parts[0] ? parseInt(parts[0], 10) : NaN;
-      const tabId = parts[1] ? parseInt(parts[1], 10) : NaN;
+      const sessionId = readFileSync(this.markerFile, 'utf8').trim();
 
-      if (!isNaN(winId) && !isNaN(tabId)) {
+      if (sessionId) {
+        // Stale markers (including the old "winId:tabId" format) fall through
+        // the loop and error, which drops us into the recreate path below.
         const switchScript = `
           tell application "iTerm"
             activate
-            set theWindow to (first window whose id is ${winId})
-            tell theWindow
-              set theTab to (first tab whose id is ${tabId})
-              select theTab
-            end tell
+            repeat with w in windows
+              repeat with t in tabs of w
+                repeat with s in sessions of t
+                  if id of s is "${sessionId}" then
+                    select w
+                    select t
+                    select s
+                    return
+                  end if
+                end repeat
+              end repeat
+            end repeat
+            error "tmux session window not found"
           end tell
         `;
         try {
