@@ -2,7 +2,7 @@ name: worktree
 session: worktree_workers
 ticketing: github
 iterm:
-  open: window
+  open: tab
   focus: true
 layout: tiled
 workers: 1
