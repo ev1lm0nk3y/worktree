@@ -7,8 +7,10 @@ Full list of all `worktree` (or `wt`) CLI commands and actions.
 | Command | Purpose | Alias |
 |---------|---------|-------|
 | `wt open` | Create worktree & launch Claude | - |
+| `wt create` | Start a worktree with no ticket, via the Guide | - |
 | `wt split` | Add worker to existing worktree | - |
 | `wt list` | Show all worktrees | - |
+| `wt close` | Close an issue's session, keep the worktree | - |
 | `wt remove` | Delete worktree & window | `wt rm` |
 | `wt init` | Setup .worktree.yml config | - |
 | `wt tldr` | Quick reference | - |
@@ -101,7 +103,41 @@ wt open SRE-526 --deploy-pool Coders --no-wizard  # Pools already skip wizard
 
 ---
 
-## 2. `wt split <issue-number>`
+## 2. `wt create [topic]`
+
+**Start a worktree with no ticket, using the Guide archetype to define the task first**
+
+### Basic Usage
+
+```bash
+# Describe the task up front
+wt create "add retry logic to the upload path"
+
+# Omit the topic and it prompts for one
+wt create
+```
+
+### What It Does
+
+Launches a single Claude instance running the `guide` archetype in a tmux session named
+`<project-slug>-guide-<base64-topic>`, with a window named `guide-<slugified-topic>`
+(truncated to 32 characters). No worktree or branch is created at this point — the Guide
+works in the repo root.
+
+The Guide's job is to turn a vague topic into a real ticket. Once it creates one and calls
+`wt open <id>`, the worktree is created through the normal `open` flow.
+
+Re-running `wt create` with the same topic switches to the existing Guide session rather
+than launching a second one.
+
+### Exit Conditions
+
+- ✅ Guide session launched, or switched to an existing one for the same topic
+- ❌ `guide` archetype not found
+
+---
+
+## 3. `wt split <issue-number>`
 
 **Add a new Claude worker to existing worktree pane**
 
@@ -190,7 +226,7 @@ wt split SRE-526 -a explorer
 
 ---
 
-## 3. `wt list`
+## 4. `wt list`
 
 **Show all active worktrees and their status**
 
@@ -207,26 +243,29 @@ wt list
 Worktrees:
 
 Issue #123 - issue-123-fix-bug
-  Path: /Users/ryan/git/repo/.git/worktrees/SRE-123-fix-bug
-  Tmux: Window 1
+  Path: /Users/ryan/git/issue-123-fix-bug
+  Tmux: No session
   Modified: Recently
 
 Issue #526 - issue-526-implement-feature
-  Path: /Users/ryan/git/repo/.git/worktrees/SRE-526-implement-feature
-  Tmux: Window 2 (active) [3 panes]
+  Path: /Users/ryan/git/issue-526-implement-feature
+  Tmux: Session active [3 panes]
   Modified: 2h ago
 
-Tmux session: repo_workers
-Active windows: 2
+Active sessions: 1 / 2
 ```
+
+With no worktrees at all, the output is `No worktrees found`.
 
 ### What It Shows
 
-- Issue number
-- Worktree path
-- Tmux window status (active/inactive, number of panes)
-- Last modified time
-- CLAUDE.md existence
+- Issue number, parsed from the branch name (falls back to the branch name itself)
+- Worktree path — a sibling directory of the repo root, not a path inside `.git/`
+- Session status: `No session`, `Session active`, or `Session active [N panes]` when a
+  session holds more than one pane
+- Last modified — the mtime of `WORKTREE_TICKET.md`, shown as `Recently`, `Nh ago`, or
+  `Nd ago`; `Unknown` when that file is absent
+- A footer counting live sessions against total worktrees
 
 ### Exit Conditions
 
@@ -234,7 +273,33 @@ Active windows: 2
 
 ---
 
-## 4. `wt remove <issue-number>`
+## 5. `wt close <issue-number>`
+
+**Close an issue's tmux session but keep the worktree on disk**
+
+### Basic Usage
+
+```bash
+wt close 526
+```
+
+### What It Does
+
+Kills the tmux session for the issue and leaves the worktree, branch, and all local changes
+untouched. Use it to reclaim a session without losing work; `wt remove` is the destructive
+counterpart.
+
+On success it prints the retained worktree path and the `wt open <issue-number>` command that
+reopens it.
+
+### Exit Conditions
+
+- ✅ Session closed, worktree retained
+- ✅ Exits cleanly with `No session found for issue #<n>` when nothing is running
+
+---
+
+## 6. `wt remove <issue-number>`
 
 **Delete worktree and close tmux window**
 
@@ -262,7 +327,7 @@ wt rm SRE-526
 
 ---
 
-## 5. `wt init`
+## 7. `wt init`
 
 **Initialize .worktree.yml configuration for repository**
 
@@ -320,7 +385,7 @@ setup_commands:
 
 ---
 
-## 6. `wt tldr`
+## 8. `wt tldr`
 
 **Show quick reference and common examples**
 
@@ -337,24 +402,57 @@ Shows common command examples and quick reference patterns.
 
 ---
 
+## 9. `wt completions [shell]`
+
+**Output a shell completion script for bash, zsh, or fish**
+
+### Basic Usage
+
+```bash
+# Auto-detect current shell and output its completion script
+source <(wt completions)
+
+# Explicit shell
+source <(wt completions bash)     # add to ~/.bashrc
+source <(wt completions zsh)      # add to ~/.zshrc
+wt completions fish > ~/.config/fish/completions/wt.fish
+```
+
+### What It Completes
+
+- All subcommands (`open`, `create`, `split`, `list`, `close`, `remove`, `rm`, `init`, `tldr`, `completions`)
+- All flags for each command (e.g. `-w`, `--deploy-pool`, `--watcher`, `-a`, `-v`)
+- Archetype ids for `-a / --archetype` (all 9 types with descriptions in fish)
+- Shell names for `wt completions <tab>`
+
+### Exit Conditions
+
+- ❌ Shell not detected and no argument provided
+
+---
+
 ## Complete Feature Matrix
 
 | Feature | Command | Status |
 |---------|---------|--------|
 | Create worktree | `wt open` | ✅ |
+| Start without a ticket | `wt create` | ✅ |
 | Fetch Linear tickets | `wt open` | ✅ |
 | Single worker launch | `wt open -w 1` | ✅ |
 | Multi-worker launch | `wt open -w N` | ✅ |
 | Worker archetypes | `wt open -w N`, `wt split -a` | ✅ |
+| Case-insensitive archetype match | `wt split -a <partial>` | ✅ |
 | Worker pools | `wt open --deploy-pool` | ✅ |
 | Watcher/overseer | `wt open --watcher` | ✅ |
 | Tmux integration | `wt split`, windows/panes | ✅ |
 | iTerm2 integration | `wt open` (macOS) | ✅ |
 | Configuration | `wt init` | ✅ |
 | List worktrees | `wt list` | ✅ |
+| Close session, keep worktree | `wt close` | ✅ |
 | Remove worktree | `wt remove` | ✅ |
 | Custom pools | `.claude/archetype-groups.yml` | ✅ |
 | Auto-detect build commands | `wt init` | ✅ |
+| Shell completions | `wt completions` | ✅ |
 
 ---
 

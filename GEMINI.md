@@ -24,8 +24,9 @@ This project is a powerful CLI tool (`worktree` or `wt`) designed to manage Git 
 ## Project Structure
 
 - `src/index.ts`: CLI entry point and command definitions.
-- `src/commands/`: Implementation of CLI subcommands (`open`, `create`, `init`, `list`, `remove`, etc.).
-- `src/lib/`: Core logic modules (Git operations, ticketing integration, tmux management, archetypes, configuration).
+- `src/commands/`: Implementation of CLI subcommands (`open`, `create`, `split`, `list`, `close`, `remove`, `init`, `tldr`, `completions`).
+- `src/core/`: Core logic modules (Git operations, ticketing integration, archetypes, pools, configuration, the `WorktreeEngine` orchestrator).
+- `src/lib/`: tmux/terminal management and CLI logging.
 - `src/templates/`: Markdown and prompt templates for generated context files.
 - `skills/`: Integration skills for external agents (e.g., `worktree-orchestrator`).
 
@@ -35,12 +36,12 @@ This project is a powerful CLI tool (`worktree` or `wt`) designed to manage Git 
 - **CLI Framework**: `commander`.
 - **Styling**: `chalk` for terminal output, `ora` for spinners.
 - **Configuration**: Uses `.worktree.yml` for project-level settings and `.claude/` for archetype/pool definitions.
-- **Testing**: (TODO: No explicit test suite found in `package.json`. Add tests if contributing new features.)
+- **Testing**: `npm test` runs `vitest run` over `tests/unit/`. `npm run test:watch` for watch mode.
 
 ## Orchestration Logic
 
 When contributing to this project, keep in mind its dual role:
 1. **Tool for Humans**: Providing a seamless CLI experience for worktree management.
-2. **Platform for AI**: Serving as an "OS" for AI agents to collaborate. Changes to coordination templates (`src/templates/coordination.md.ts`) or archetypes (`src/lib/archetypes.ts`) directly affect how AI agents interact.
+2. **Platform for AI**: Serving as an "OS" for AI agents to collaborate. Changes to coordination templates (`src/templates/coordination.md.ts`) or archetypes (`src/core/archetypes.ts`) directly affect how AI agents interact.
 
 Refer to `agent-instructions.md` for specific guidance on how AI agents are intended to use this tool.

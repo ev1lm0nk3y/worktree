@@ -9,6 +9,7 @@ This document defines how an AI agent (Gemini, Claude, or others) should use the
 3. **Team Deployment (`--deploy-pool`)**: Launch pre-configured teams (Researchers, Coders, Reviewers).
 4. **Explicit Archetype Assignment (`--archetypes`)**: Choose specific archetypes for workers 2..N at launch time, bypassing the interactive wizard.
 5. **Dynamic Scaling (`wt split`)**: Add specific archetypes (Architect, Detective, etc.) to an active session.
+6. **Session Lifecycle (`wt list`, `wt close`, `wt remove`)**: Inspect active worktrees, close a session while keeping its worktree, or remove both.
 
 ---
 
@@ -55,5 +56,6 @@ All workers in a `worktree` session MUST coordinate via the `WORKTREE_COORDINATI
 
 ## Agent Guidelines
 - **Always check status**: Run `wt list` to see active worktrees.
+- **Close, don't delete**: Use `wt close <id>` to free a session while keeping the worktree and its changes. `wt remove <id>` discards the worktree, so reserve it for finished work.
 - **Stay isolated**: Only perform work within the `worktree/` directory created by the tool.
 - **Refine first**: Use `wt create` and the **Guide** archetype to scope the work and create a ticket before any implementation begins. The Guide will call `wt open` once the definition is locked.

@@ -57,7 +57,7 @@ wt open SRE-526 --deploy-pool Researchers
 **Example:**
 ```bash
 wt open SRE-526 --deploy-pool Coders
-# ... implement with Craftsman, Aesthete, Detective
+# ... implement with Craftsman and Aesthete
 # When ready for adversary review:
 wt split SRE-526 -a adversary
 ```

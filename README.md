@@ -15,6 +15,7 @@ A powerful CLI tool for managing Git worktrees with GitHub or Linear issues and 
 - 🤖 **AI Agent Orchestration** - Gemini and Claude can autonomously manage worktrees
 - 🎭 **Coding Agent Archetypes** - Assign specialized roles to multiple workers
 - 🧩 **Worker Pools** - Deploy pre-configured archetype teams (Researchers, Coders, Reviewers) in one command
+- 🔌 **Detachable Sessions** - Close a session with `close` and keep the worktree, or drop both with `remove`
 
 ## Prerequisites
 
@@ -160,10 +161,12 @@ worktree list
 ```
 
 Shows all worktrees with:
-- Issue number and branch name
-- tmux window status
-- Last modified time
-- Number of panes
+- Issue number, parsed from the branch name
+- Worktree path (a sibling directory of the repo root)
+- Session status — `No session`, `Session active`, or `Session active [N panes]`
+- Last modified, from the mtime of `WORKTREE_TICKET.md`
+
+A footer counts live sessions against total worktrees.
 
 ### Shell Completions
 
@@ -178,6 +181,16 @@ worktree completions fish > ~/.config/fish/completions/wt.fish
 ```
 
 Provides tab-completion for all subcommands, flags, archetype ids, pool names, and shell targets.
+
+### Close a Session
+
+```bash
+worktree close 123
+```
+
+Kills the issue's tmux session and leaves the worktree, branch, and local changes in place.
+Reopen it later with `worktree open 123`. Use this instead of `remove` when you want the
+session gone but the work kept.
 
 ### Remove Worktree
 

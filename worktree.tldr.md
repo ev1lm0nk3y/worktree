@@ -36,6 +36,10 @@
 
 `worktree list`
 
+- Close an issue's tmux session but keep the worktree:
+
+`worktree close {{issue_number}}`
+
 - Remove a worktree and close its tmux window:
 
 `worktree rm {{issue_number}}`

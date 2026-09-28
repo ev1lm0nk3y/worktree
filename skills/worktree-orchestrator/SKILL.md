@@ -60,6 +60,7 @@ wt split LIN-123 --no-wizard        # use default archetype
 
 ```bash
 wt list              # show all active worktrees
+wt close LIN-123     # kill the tmux session, keep the worktree and its changes
 wt remove LIN-123    # close tmux window + delete worktree
 wt rm LIN-123        # alias for remove
 ```
